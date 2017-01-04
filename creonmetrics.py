@@ -9,7 +9,7 @@ This file will contain our custom scoring metrics
 """
 
 from sklearn.metrics import brier_score_loss
-
+from sklearn.metrics import make_scorer
 
 def pu_score(y_true, y_pred):
    """
@@ -55,3 +55,8 @@ def brier_score_labeled_loss(y_true, y_pred):
    """
    labeled_mask = y_true != -1
    return brier_score_loss(y_true = y_true[labeled_mask], y_prob = y_pred[labeled_mask])
+
+# Scorers for model selection
+pu_scorer = make_scorer(pu_score)
+prior_squared_error_scorer_015 = make_scorer(prior_squared_error, greater_is_better=False, prior=0.015)
+brier_score_labeled_loss_scorer = make_scorer(brier_score_labeled_loss, greater_is_better=False, needs_proba=True)
