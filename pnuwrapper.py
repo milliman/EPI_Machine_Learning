@@ -6,13 +6,14 @@ Created on Wed Jan  4 23:40:29 2017
 """
 
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from sklearn.utils import check_random_state
 
 from semisuperhelper import SemiSupervisedHelper
 
 
-class PNUWrapper(BaseEstimator, ClassifierMixin):
+class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     """
     This will wrap classifiers to be used with unlabeled data
 
@@ -20,7 +21,7 @@ class PNUWrapper(BaseEstimator, ClassifierMixin):
     """
 
     #TODO - add in probability fitting of thresholds in the training
-    def __init__(self, base_estimator=None, num_unlabeled=0.0):
+    def __init__(self, base_estimator=None, num_unlabeled=0.0, random_state=None):
         """
         If num_unlabeled is float, then use that % of unlabeled in training
         If num_unlabeled is an int, then use that number of unlabeled data to train
@@ -30,11 +31,11 @@ class PNUWrapper(BaseEstimator, ClassifierMixin):
         self.num_unlabeled = num_unlabeled
 
     def fit(self, X, y):
-
+        random_state = check_random_state(self.random_state)
         # Check that X and y have correct shape
         X, y = check_X_y(X, y)
         # Check y only has -1, 0, 1
-        if not np.array_equal(np.unique(y), np.asarray([-1, 0, 1])):
+        if np.setdiff1d(y, np.asarray([-1, 0, 1])):
             raise ValueError("y must contain only -1 (unlabeled), 0 (negative), and 1 (positive) labels.")
         # Check to see base_estimator exists
         if self.base_estimator is None:
@@ -47,7 +48,7 @@ class PNUWrapper(BaseEstimator, ClassifierMixin):
         self.X_ = X
         self.y_ = y
 
-        ssh = SemiSupervisedHelper(y)
+        ssh = SemiSupervisedHelper(y, random_state=random_state)
         X_temp, y_temp = ssh.pn_assume(X, unlabeled_pct=self.num_unlabeled)
         self.base_estimator.fit(X_temp, y_temp)
 

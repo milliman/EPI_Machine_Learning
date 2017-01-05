@@ -5,8 +5,9 @@ Created on Mon Jan  2 00:03:11 2017
 @author: jeffrey.gomberg
 
 """
-import pandas as pd
 import numpy as np
+from sklearn.utils import check_random_state
+from sklearn.utils.random import sample_without_replacement
 
 class SemiSupervisedHelper:
     """This class will provide helper functions for dealing with semi-supervised learning problems
@@ -16,7 +17,8 @@ class SemiSupervisedHelper:
             1 -> Positive
     """
 
-    def __init__(self, y):
+    def __init__(self, y, random_state=None):
+        self.random_state = random_state
         self.y = y
         self.pn_mask = (y == 0) | (y == 1)
         self.pu_mask = (y == -1) | (y == 1)
@@ -53,13 +55,14 @@ class SemiSupervisedHelper:
         If unlabaled_pct is float, take that % of unlabeleds, if int, then take that # unlabeleds
         """
         assert unlabeled_pct >= 0.0, "SemiSupervisedHelper.pn_assume unlabeled_pct >= 0"
+        random_state = check_random_state(self.random_state)
 
         X_pn, y_pn = self.pn(X)
         if unlabeled_pct == 0.0:
             return X_pn, y_pn
         X_u, y_u = self.u(X)
         num_u = min(unlabeled_pct if isinstance(unlabeled_pct, int) else int(unlabeled_pct * len(y_u)), len(y_u))
-        rand_idx = np.random.choice(X_u.shape[0], size=num_u, replace=False)
+        rand_idx = sample_without_replacement(n_population = X_u.shape[0], n_samples=num_u, random_state=random_state)
         X_u = X_u[rand_idx, :]
         y_u = np.full(num_u, unlabeled_to_class, dtype='int64')
 
