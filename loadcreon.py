@@ -29,4 +29,4 @@ class LoadCreon:
 
 
 if __name__ == "__main__":
-    lc = LoadCreon('C:\Data\membership14_final.txt');
+    lc = LoadCreon("C:\Data\\010317\membership14_final_0103.txt");

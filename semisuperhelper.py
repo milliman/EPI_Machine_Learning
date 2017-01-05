@@ -6,6 +6,7 @@ Created on Mon Jan  2 00:03:11 2017
 
 """
 import pandas as pd
+import numpy as np
 
 class SemiSupervisedHelper:
     """This class will provide helper functions for dealing with semi-supervised learning problems
@@ -15,7 +16,7 @@ class SemiSupervisedHelper:
             1 -> Positive
     """
 
-    def __init__(self, y: pd.Series):
+    def __init__(self, y):
         self.y = y
         self.pn_mask = (y == 0) | (y == 1)
         self.pu_mask = (y == -1) | (y == 1)
@@ -26,29 +27,43 @@ class SemiSupervisedHelper:
         """
         Return X_pn, y_pn
         """
-        return X[self.pn_mask.values], self.y[self.pn_mask]
+        return X[self.pn_mask], self.y[self.pn_mask]
 
     def pu(self, X):
         """
         Return X_pu, y_pu
         """
-        return X[self.pu_mask.values], self.y[self.pu_mask]
+        return X[self.pu_mask], self.y[self.pu_mask]
 
     def nu(self, X):
         """
         Return X_nu, y_nu
         """
-        return X[self.nu_mask.values], self.y[self.nu_mask]
+        return X[self.nu_mask], self.y[self.nu_mask]
 
     def u(self, X):
         """
-        Return all unlabeled X, y_u
+        Return all unlabeled X_u, y_u
         """
-        return X[self.u_mask.values], self.y[self.u_mask]
+        return X[self.u_mask], self.y[self.u_mask]
 
-    def pn_assume(self, unlabeled_to_class=0):
+    def pn_assume(self, X, unlabeled_to_class=0, unlabeled_pct=1.0):
         """
-        Return y with the unalbeled assumed to be unlabled_class
+        Return X, y with the unlabeled assumed to be unlabled_class and a specified number of unlabeleds
+        If unlabaled_pct is float, take that % of unlabeleds, if int, then take that # unlabeleds
         """
-        return self.y.replace(to_replace=-1, value=unlabeled_to_class)
+        assert unlabeled_pct >= 0.0, "SemiSupervisedHelper.pn_assume unlabeled_pct >= 0"
+
+        X_pn, y_pn = self.pn(X)
+        if unlabeled_pct == 0.0:
+            return X_pn, y_pn
+        X_u, y_u = self.u(X)
+        num_u = min(unlabeled_pct if isinstance(unlabeled_pct, int) else int(unlabeled_pct * len(y_u)), len(y_u))
+        rand_idx = np.random.choice(X_u.shape[0], size=num_u, replace=False)
+        X_u = X_u[rand_idx, :]
+        y_u = np.full(num_u, unlabeled_to_class, dtype='int64')
+
+        X_ret = np.vstack((X_pn, X_u))
+        y_ret = np.concatenate((y_pn, y_u))
+        return X_ret, y_ret
 
