@@ -8,7 +8,8 @@ Created on Tue Jan  3 07:41:57 2017
 This file will contain our custom scoring metrics
 """
 
-from sklearn.metrics import brier_score_loss
+from functools import partial
+from sklearn.metrics import brier_score_loss, auc, average_precision_score, f1_score
 from sklearn.metrics import make_scorer
 
 def pu_score(y_true, y_pred):
@@ -47,14 +48,43 @@ def prior_squared_error(y_true, y_pred, prior):
    else:
       return ((unlabeled_pos / unlabeled_n) - prior) ** 2
 
+def labeled_metric(y_true, y_pred, metric, **kwargs):
+    """
+    This will wrap a metric so that you can pass it in and it will compute it on labeled instances
+
+    Assumption: label -1 == unlabled, 0 == negative, 1 == positive
+    """
+    labeled_mask = y_true != -1
+    return metric(y_true[labeled_mask], y_pred[labeled_mask], **kwargs)
+
+# TODO - finish testing this and make_asuumed_scorer!
+def make_label_scorer(metric, greater_is_better=True, needs_proba=False, needs_threshold=False, **kwargs):
+    fn = partial(labeled_metric, metric=metric, **kwargs)
+    return make_scorer(fn, greater_is_better=greater_is_better,
+                       needs_proba=needs_threshold,
+                       needs_threshold=needs_threshold,
+                       **kwargs)
+
+def assumed_metric(y_true, y_pred, metric, assume_unlabeled=0, **kwargs):
+    """
+    This will wrap a metric so that you can pass it in and it will compute it on labeled
+    and unlabeled instances converting unlabeled to assume_unlabeled
+
+    Assumption: label -1 == unlabled, 0 == negative, 1 == positive
+    """
+    unlabeled_mask = y_true == -1
+    y_true_assume = y_true.copy()
+    y_true_assume[unlabeled_mask] = assume_unlabeled
+    return metric(y_true_assume, y_pred, **kwargs)
+
 def brier_score_labeled_loss(y_true, y_pred):
    """
    Calculate the brier score on only the labeled data in the set
 
    Assumption: label -1 == unlabeled, 0 == negative, 1 == positive
    """
-   labeled_mask = y_true != -1
-   return brier_score_loss(y_true = y_true[labeled_mask], y_prob = y_pred[labeled_mask])
+   return labeled_metric(y_true, y_pred, brier_score_loss)
+
 
 # Scorers for model selection
 pu_scorer = make_scorer(pu_score)
