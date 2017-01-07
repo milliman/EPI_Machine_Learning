@@ -55,15 +55,22 @@ def labeled_metric(y_true, y_pred, metric, **kwargs):
     Assumption: label -1 == unlabled, 0 == negative, 1 == positive
     """
     labeled_mask = y_true != -1
-    return metric(y_true[labeled_mask], y_pred[labeled_mask], **kwargs)
+    y_true_labeled = y_true[labeled_mask]
+    # check if a probability, then take the last column and use it (probability of the positive class)
+    if (len(y_pred.shape) > 1):
+        y_pred = y_pred[:,-1]
+    y_pred_labeled = y_pred[labeled_mask]
+    return metric(y_true_labeled, y_pred_labeled, **kwargs)
 
-# TODO - finish testing this and make_asuumed_scorer!
 def make_label_scorer(metric, greater_is_better=True, needs_proba=False, needs_threshold=False, **kwargs):
+    """
+    This function will create a callable scorer object similar to "sklearn.metrics.make_scorer" but will
+    make sure to only use "labeled" data.  The function assumes unlabeled data == -1, while labeled is 0 or 1.
+    """
     fn = partial(labeled_metric, metric=metric, **kwargs)
     return make_scorer(fn, greater_is_better=greater_is_better,
-                       needs_proba=needs_threshold,
-                       needs_threshold=needs_threshold,
-                       **kwargs)
+                       needs_proba=needs_proba,
+                       needs_threshold=needs_threshold, **kwargs)
 
 def assumed_metric(y_true, y_pred, metric, assume_unlabeled=0, **kwargs):
     """
@@ -75,18 +82,28 @@ def assumed_metric(y_true, y_pred, metric, assume_unlabeled=0, **kwargs):
     unlabeled_mask = y_true == -1
     y_true_assume = y_true.copy()
     y_true_assume[unlabeled_mask] = assume_unlabeled
+    # check if a probability, then take the last column and use it (probability of the positive class)
+    if (len(y_pred.shape) > 1):
+        y_pred = y_pred[:,-1]
     return metric(y_true_assume, y_pred, **kwargs)
 
-def brier_score_labeled_loss(y_true, y_pred):
-   """
-   Calculate the brier score on only the labeled data in the set
+def make_assumed_scorer(metric, assume_unlabeled=0,
+                        greater_is_better=True, needs_proba=False, needs_threshold=False, **kwargs):
+    """
+    This function will create a callable scorer object similar to "sklearn.metric.make_scorer" but will
+    assume all unlabeled data is assume_unlabeled.  The function assumes unlabeled data == -1, while labeled is 0 or 1.
+    """
+    fn = partial(assumed_metric, metric=metric, assume_unlabeled=0, **kwargs)
+    return make_scorer(fn, greater_is_better=greater_is_better,
+                       needs_proba=needs_proba,
+                       needs_threshold=needs_threshold, **kwargs)
 
-   Assumption: label -1 == unlabeled, 0 == negative, 1 == positive
-   """
-   return labeled_metric(y_true, y_pred, brier_score_loss)
 
 
 # Scorers for model selection
 pu_scorer = make_scorer(pu_score)
 prior_squared_error_scorer_015 = make_scorer(prior_squared_error, greater_is_better=False, prior=0.015)
-brier_score_labeled_loss_scorer = make_scorer(brier_score_labeled_loss, greater_is_better=False, needs_proba=True)
+brier_score_labeled_loss_scorer = make_label_scorer(brier_score_loss, greater_is_better=False, needs_proba=True)
+brier_score_assumed_loss_scorer = make_assumed_scorer(brier_score_loss, greater_is_better=False, needs_proba=True)
+f1_labeled_scorer = make_label_scorer(f1_score)
+f1_assumed_scorer = make_assumed_scorer(f1_score)
