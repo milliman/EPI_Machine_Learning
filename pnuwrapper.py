@@ -60,7 +60,7 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
         self.base_estimator.fit(X_temp, y_temp)
 
         #TODO - error checking on the block below - good threshold_set_pct, enough unlableds, etc.
-        if self.threshold_set_pct is not None:
+        if self.threshold_set_pct is not None and len(X_unlabeled_unused > 0):
             unlabeled_pr = self.base_estimator.predict_proba(X_unlabeled_unused)[:, 1]
             unlabeled_pr[::-1].sort()
             u_N = len(unlabeled_pr)
