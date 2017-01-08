@@ -51,22 +51,26 @@ class SemiSupervisedHelper:
 
     def pn_assume(self, X, unlabeled_to_class=0, unlabeled_pct=1.0):
         """
-        Return X, y with the unlabeled assumed to be unlabled_class and a specified number of unlabeleds
+        Return X, y, X_unused with the unlabeled assumed to be unlabled_class and a specified number of unlabeleds
         If unlabaled_pct is float, take that % of unlabeleds, if int, then take that # unlabeleds
         """
-        assert unlabeled_pct >= 0.0, "SemiSupervisedHelper.pn_assume unlabeled_pct >= 0"
+        if unlabeled_pct < 0.0:
+            raise ValueError("SemiSupervisedHelper.pn_assume unlabeled_pct >= 0")
         random_state = check_random_state(self.random_state)
 
         X_pn, y_pn = self.pn(X)
+        X_u_full, y_u = self.u(X)
         if unlabeled_pct == 0.0:
-            return X_pn, y_pn
-        X_u, y_u = self.u(X)
+            return X_pn, y_pn, X_u_full
         num_u = min(unlabeled_pct if isinstance(unlabeled_pct, int) else int(unlabeled_pct * len(y_u)), len(y_u))
-        rand_idx = sample_without_replacement(n_population = X_u.shape[0], n_samples=num_u, random_state=random_state)
-        X_u = X_u[rand_idx, :]
+        rand_idx = sample_without_replacement(n_population = X_u_full.shape[0], n_samples=num_u, random_state=random_state)
+        mask = np.zeros(X_u_full.shape[0], dtype=np.bool)
+        mask[rand_idx] = True
+        X_u = X_u_full[mask, :]
+        X_u_unused = X_u_full[~mask, :]
         y_u = np.full(num_u, unlabeled_to_class, dtype='int64')
 
         X_ret = np.vstack((X_pn, X_u))
         y_ret = np.concatenate((y_pn, y_u))
-        return X_ret, y_ret
+        return X_ret, y_ret, X_u_unused
 
