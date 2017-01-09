@@ -54,16 +54,12 @@ def labeled_metric(y_true, y_pred, metric, **kwargs):
 
     Assumption: label -1 == unlabled, 0 == negative, 1 == positive
     """
-    assert len(y_true) == len(y_pred), "y not same lenght! t->p {} {}".format(len(y_true), len(y_pred))
     labeled_mask = y_true != -1
     y_true_labeled = y_true[labeled_mask]
     # check if a probability, then take the last column and use it (probability of the positive class)
     if (len(y_pred.shape) > 1):
         y_pred = y_pred[:,-1]
     y_pred_labeled = y_pred[labeled_mask]
-    import pandas as pd
-    assert len(y_true_labeled) == len(y_pred_labeled), \
-        "Ugg labeled metric y not same lenght! t->p {} {} orig t-> {} {} len_mask={} y_pred_shape={}".format(len(y_true_labeled), len(y_pred_labeled), len(y_true), len(y_pred), pd.Series(labeled_mask).value_counts(), y_pred.shape)
     return metric(y_true_labeled, y_pred_labeled, **kwargs)
 
 def make_label_scorer(metric, greater_is_better=True, needs_proba=False, needs_threshold=False, **kwargs):

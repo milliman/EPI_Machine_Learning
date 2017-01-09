@@ -17,7 +17,8 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     """
     This will wrap classifiers to be used with unlabeled data
 
-    WARNING: This class is very brittle and should not be used outside this project without more boilerplate
+    WARNING: This class is very brittle and should not be used outside this project without more boilerplate, tests
+    and error checking
     """
 
     def __init__(self, base_estimator=None, num_unlabeled=0.0, threshold_set_pct=None, random_state=None):
@@ -66,7 +67,6 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
             u_N = len(unlabeled_pr)
             idx = min(max(int(self.threshold_set_pct * u_N) - 1, 0), u_N - 1)
             self.threshold = unlabeled_pr[idx]
-            print("u_N:{} idx={} threshold={} min={} max={}".format(u_N, idx, self.threshold, unlabeled_pr[-1], unlabeled_pr[0]))
 
         # Return the classifier
         return self
