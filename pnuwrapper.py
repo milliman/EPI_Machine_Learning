@@ -10,6 +10,11 @@ from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 
+#TODO - remove me below
+from sklearn.ensemble import BaggingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
 from semisuperhelper import SemiSupervisedHelper
 
 
@@ -36,12 +41,11 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
         self.num_unlabeled = num_unlabeled
         self.random_state = random_state
         self.threshold_set_pct = threshold_set_pct
-        self.threshold = None
 
     def fit(self, X, y):
         random_state = check_random_state(self.random_state)
         # Check that X and y have correct shape
-        X, y = check_X_y(X, y)
+        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
         # Check y only has -1, 0, 1
         if np.setdiff1d(y, np.asarray([-1, 0, 1])):
             raise ValueError("y must contain only -1 (unlabeled), 0 (negative), and 1 (positive) labels.")
@@ -52,7 +56,7 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
             raise ValueError("num_unlabeled must be > 0")
         # Store the classes seen during fit
         self.classes_ = np.asarray([0, 1])
-
+        self.n_features_ = X.shape[1]
         self.X_ = X
         self.y_ = y
 
@@ -61,12 +65,21 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
         self.base_estimator.fit(X_temp, y_temp)
 
         #TODO - error checking on the block below - good threshold_set_pct, enough unlableds, etc.
-        if self.threshold_set_pct is not None and len(X_unlabeled_unused > 0):
+        if hasattr(self.base_estimator, 'decision_function'):
+            self.threshold_fn = self.base_estimator.decision_function
+        elif hasattr(self.base_estimator, 'predict_proba'):
+            self.threshold_fn = self.base_estimator.predict_proba
+        else:
+            self.threshold_fn = None
+        if self.threshold_fn is not None and self.threshold_set_pct is not None and len(X_unlabeled_unused > 0):
+            #TODO - change this here to decision function
             unlabeled_pr = self.base_estimator.predict_proba(X_unlabeled_unused)[:, 1]
             unlabeled_pr[::-1].sort()
             u_N = len(unlabeled_pr)
             idx = min(max(int(self.threshold_set_pct * u_N) - 1, 0), u_N - 1)
             self.threshold = unlabeled_pr[idx]
+        else:
+            self.threshold = None
 
         # Return the classifier
         return self
@@ -74,10 +87,16 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     def predict(self, X):
 
         # Check is fit had been called
-        check_is_fitted(self, ['X_', 'y_'])
+        check_is_fitted(self, ['classes_'])
 
         # Input validation
-        X = check_array(X)
+        X = check_array(X, accept_sparse=['csr', 'csc'])
+
+        if self.n_features_ != X.shape[1]:
+            raise ValueError("Number of features of the model must "
+                             "match the input. Model n_features is {0} and "
+                             "input n_features is {1}."
+                             "".format(self.n_features_, X.shape[1]))
 
         if self.threshold is None:
             return self.base_estimator.predict(X)
@@ -85,5 +104,19 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
             pr = self.base_estimator.predict_proba(X)[:, 1]
             return np.asarray(pr >= self.threshold, dtype=np.int)
 
+    def predict_proba(self, X):
+        check_is_fitted(self, 'classes_')
 
+        # Check data
+        X = check_array(X, accept_sparse=['csr', 'csc'])
 
+        if self.n_features_ != X.shape[1]:
+            raise ValueError("Number of features of the model must "
+                             "match the input. Model n_features is {0} and "
+                             "input n_features is {1}."
+                             "".format(self.n_features_, X.shape[1]))
+
+        if hasattr(self.base_estimator, "predict_proba"):
+            proba = self.base_estimator.predict_proba(X)
+
+        return proba
