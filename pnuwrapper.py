@@ -66,20 +66,22 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
 
         #TODO - error checking on the block below - good threshold_set_pct, enough unlableds, etc.
         if hasattr(self.base_estimator, 'decision_function'):
-            self.threshold_fn = self.base_estimator.decision_function
+            self.threshold_fn_ = self.base_estimator.decision_function
         elif hasattr(self.base_estimator, 'predict_proba'):
-            self.threshold_fn = self.base_estimator.predict_proba
+            self.threshold_fn_ = self.base_estimator.predict_proba
         else:
-            self.threshold_fn = None
-        if self.threshold_fn is not None and self.threshold_set_pct is not None and len(X_unlabeled_unused > 0):
+            self.threshold_fn_ = None
+        if self.threshold_fn_ is not None and self.threshold_set_pct is not None and len(X_unlabeled_unused > 0):
             #TODO - change this here to decision function
-            unlabeled_pr = self.base_estimator.predict_proba(X_unlabeled_unused)[:, 1]
-            unlabeled_pr[::-1].sort()
-            u_N = len(unlabeled_pr)
+            unlabeled_threshold = self.threshold_fn_(X_unlabeled_unused)
+            if len(unlabeled_threshold.shape) > 1:
+                unlabeled_threshold = unlabeled_threshold[:, -1]
+            unlabeled_threshold[::-1].sort()
+            u_N = len(unlabeled_threshold)
             idx = min(max(int(self.threshold_set_pct * u_N) - 1, 0), u_N - 1)
-            self.threshold = unlabeled_pr[idx]
+            self.threshold_ = unlabeled_threshold[idx]
         else:
-            self.threshold = None
+            self.threshold_ = None
 
         # Return the classifier
         return self
@@ -98,11 +100,11 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
                              "input n_features is {1}."
                              "".format(self.n_features_, X.shape[1]))
 
-        if self.threshold is None:
+        if self.threshold_ is None:
             return self.base_estimator.predict(X)
         else:
             pr = self.base_estimator.predict_proba(X)[:, 1]
-            return np.asarray(pr >= self.threshold, dtype=np.int)
+            return np.asarray(pr >= self.threshold_, dtype=np.int)
 
     def predict_proba(self, X):
         check_is_fitted(self, 'classes_')
@@ -118,5 +120,7 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
 
         if hasattr(self.base_estimator, "predict_proba"):
             proba = self.base_estimator.predict_proba(X)
+        else:
+            raise AttributeError("predict_prob doesn't exist for: {}".format(self.base_estimator))
 
         return proba

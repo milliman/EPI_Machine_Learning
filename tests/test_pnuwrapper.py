@@ -31,6 +31,9 @@ class TestPNUWrapper(unittest.TestCase):
                                 num_unlabeled=5819, threshold_set_pct=0.0143))]
         pipe = Pipeline(estimators)
         scores = cross_val_score(pipe, self.X, self.y, cv=2, scoring=f1_labeled_scorer, n_jobs=4)
+        pipe.fit(self.X, self.y)
+        pipe.predict(self.X)
+        pipe.predict_proba(self.X)
         print(scores)
 
 
