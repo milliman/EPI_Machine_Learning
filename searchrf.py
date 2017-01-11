@@ -42,5 +42,5 @@ if __name__ == "__main__":
                        'base_estimator__class_weight':[None,'balanced','balanced_subsample']}
     rf = RandomForestClassifier()
     pnu = PNUWrapper(base_estimator=rf, num_unlabeled=5819, threshold_set_pct=0.0143, random_state=77)
-    random_rf_searcher = RandomizedSearchCV(pnu, rf_param_search, n_iter=50, scoring=pu_scorer, n_jobs=-1, cv=5)
+    random_rf_searcher = RandomizedSearchCV(pnu, rf_param_search, n_iter=100, scoring=pu_scorer, n_jobs=-1, cv=5)
     random_rf_searcher.fit(X_train.values, y_train.values)
