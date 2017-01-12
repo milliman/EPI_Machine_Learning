@@ -119,6 +119,8 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
                              "".format(self.n_features_, X.shape[1]))
 
         if hasattr(self.base_estimator, "predict_proba"):
+            #TODO - need to modify this for the threshold if it exists, calibrate where threshold is
+            # and set that to probabilty = 0.5
             proba = self.base_estimator.predict_proba(X)
         else:
             raise AttributeError("predict_prob doesn't exist for: {}".format(self.base_estimator))
