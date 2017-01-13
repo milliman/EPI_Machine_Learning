@@ -8,8 +8,10 @@ Created on Tue Jan  3 07:41:57 2017
 This file will contain our custom scoring metrics
 """
 
+import pandas as pd
 from functools import partial
-from sklearn.metrics import brier_score_loss, auc, average_precision_score, f1_score
+from sklearn.metrics import brier_score_loss, roc_auc_score, average_precision_score, f1_score, fbeta_score, \
+    accuracy_score, recall_score, precision_score
 from sklearn.metrics import make_scorer
 
 def pu_score(y_true, y_pred):
@@ -31,22 +33,54 @@ def pu_score(y_true, y_pred):
 
    return recall * recall / pr_true
 
+def report_metrics(clf, X, y_true):
+    """
+    Take in a fitted classifier and a dataset with true values, output a pd.Series of metrics
+    """
+    y_prob = clf.predict_proba(X)
+    y_pred = clf.predict(X)
+    ret = {'labeled_acc' : labeled_metric(y_true, y_pred, accuracy_score),
+        'labeled_prec' : labeled_metric(y_true, y_pred, precision_score),
+        'labeled_recall' : labeled_metric(y_true, y_pred, recall_score),
+        'labeled_f1' : labeled_metric(y_true, y_pred, f1_score),
+        'labeled_roc_auc' : labeled_metric(y_true, y_pred, roc_auc_score),
+        'labeled_avg_prec' : labeled_metric(y_true, y_pred, average_precision_score),
+        'pr_one_unlabeled' : pr_one_unlabeled(y_true, y_pred),
+        'labeled_brier' : labeled_metric(y_true, y_prob, brier_score_loss),
+        'assumed_brier' : assumed_metric(y_true, y_prob, brier_score_loss),
+        'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
+        'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
+        'assumed_f1beta60' : assumed_metric(y_true, y_pred, fbeta_score, beta=60),
+        'pu_score' : pu_score(y_true, y_pred)}
+    return pd.Series(ret)
+
+
+def pr_one_unlabeled(y_true, y_pred):
+    """
+    probability that unabeleds are predicted to be class == 1
+    """
+    unlabeled_pos = sum([t == -1 and p == 1 for t, p in zip(y_true, y_pred)])
+    unlabeled_n = (y_true == -1).sum()
+
+    if unlabeled_n == 0:
+        #no unlabeleds, so no pr
+        return 0.0
+    else:
+        return unlabeled_pos / unlabeled_n
+
 def prior_squared_error(y_true, y_pred, prior):
-   """
-   This will evaluate how many of the unlabeled data are pos_label and see as a percentage
-   how far away it is from the prior
+    """
+    This will evaluate how many of the unlabeled data are pos_label and see as a percentage
+    how far away it is from the prior
 
-   Assumption: label -1 == unlabeled, 0 == negative, 1 == positive
-   """
+    Assumption: label -1 == unlabeled, 0 == negative, 1 == positive
+    """
 
-   unlabeled_pos = sum([t == -1 and p == 1 for t, p in zip(y_true, y_pred)])
-   unlabeled_n = (y_true == -1).sum()
-
-   if unlabeled_n == 0:
-      #no unlabeleds, so no error
+    pr = pr_one_unlabeled(y_true, y_pred)
+    if pr == 0.0:
       return 0.0
-   else:
-      return ((unlabeled_pos / unlabeled_n) - prior) ** 2
+    else:
+      return (pr - prior) ** 2
 
 def labeled_metric(y_true, y_pred, metric, **kwargs):
     """
