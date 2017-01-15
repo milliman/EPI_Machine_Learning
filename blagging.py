@@ -108,8 +108,7 @@ class BlaggingClassifier(BaggingClassifier):
                  random_state=None,
                  verbose=0):
 
-        # WARNING - this is dangerous - need to set this back if going to use any real Bagging ensembles through
-        #sklearn
+        # WARNING - this is dangerous - need to set this back if going to use any real Bagging ensembles through sklearn
         self.orig_parallel_build_estimators = sklearn.ensemble.bagging._parallel_build_estimators
         self.orig_generate_bagging_indices = sklearn.ensemble.bagging._generate_bagging_indices
         sklearn.ensemble.bagging._parallel_build_estimators =_parallel_build_estimators

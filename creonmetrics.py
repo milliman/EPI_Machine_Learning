@@ -50,10 +50,8 @@ def report_metrics(clf, X, y_true):
         'assumed_brier' : assumed_metric(y_true, y_prob, brier_score_loss),
         'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
         'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
-        'assumed_f1beta60' : assumed_metric(y_true, y_pred, fbeta_score, beta=60),
         'pu_score' : pu_score(y_true, y_pred)}
     return pd.Series(ret)
-
 
 def pr_one_unlabeled(y_true, y_pred):
     """
