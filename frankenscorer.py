@@ -5,61 +5,43 @@ Created on Sun Jan 15 00:03:22 2017
 @author: jeffrey.gomberg
 """
 
-from contextlib import ContextDecorator
-
 import pandas as pd
-import sklearn.model_selection._validation as skvalid
+import numpy as np
+
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score, brier_score_loss, fbeta_score
 
+
 from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled
+from jeffsearchcv import JeffRandomSearchCV
 
-
-def _score_no_number_check(estimator, X_test, y_test, scorer):
-    """Compute the score of an estimator on a given test set. Take out the isNumber check."""
-    if y_test is None:
-        score = scorer(estimator, X_test)
-    else:
-        score = scorer(estimator, X_test, y_test)
-    if hasattr(score, 'item'):
-        try:
-            # e.g. unwrap memmapped scalars
-            score = score.item()
-        except ValueError:
-            # non-scalar?
-            pass
-    return score
-
-class TurnOffScoreCheck(ContextDecorator):
-    """
-    Use this to turn off the check in sklearn that checks if a scorer returns a Number or not.
-
-    Example usages::
-        @TurnOffScoreCheck()
-        def scorers_gone_wild(clf, X, y, scorer=frankenscorer)
-
-        with TurnOffScoreCheck():
-            scorers_gone_wile(clf, X, y, scorer=frankenscorer)
-    """
-    def __enter__(self):
-        self.old_score_fn = skvalid._score
-        skvalid._score = _score_no_number_check
-
-    def __exit__(self, *exc):
-        skvalid._score = self.old_score_fn
+#class TurnOffScoreCheck(ContextDecorator):
+#    """
+#    Use this to turn off the check in sklearn that checks if a scorer returns a Number or not.
+#
+#    Example usages::
+#        @TurnOffScoreCheck()
+#        def scorers_gone_wild(clf, X, y, scorer=frankenscorer)
+#
+#        with TurnOffScoreCheck():
+#            scorers_gone_wile(clf, X, y, scorer=frankenscorer)
+#    """
+#    def __enter__(self):
+#        self.old_score_fn = skvalid._score
+#        skvalid._score = _score_no_number_check
+#
+#    def __exit__(self, *exc):
+#        skvalid._score = self.old_score_fn
 
 class FrankenScorer():
     """
     This is a sklearn scorer object that returns a dictionary instead of a number
-
-    TODO - fiture out how to override comparison and use some type of customer real score to sort these things?
-    Maybe passed in so that it is defined what crazy metric you really want to use
     """
     def __call__(self, estimator, X, y_true, sample_weight=None):
         y_pred = estimator.predict(X)
         y_prob = estimator.predict_proba(X)
 
-        ret = {'labeled_acc' : labeled_metric(y_true, y_pred, accuracy_score),
+        self._data = {'labeled_acc' : labeled_metric(y_true, y_pred, accuracy_score),
             'labeled_prec' : labeled_metric(y_true, y_pred, precision_score),
             'labeled_recall' : labeled_metric(y_true, y_pred, recall_score),
             'labeled_f1' : labeled_metric(y_true, y_pred, f1_score),
@@ -71,18 +53,22 @@ class FrankenScorer():
             'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
             'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
             'pu_score' : pu_score(y_true, y_pred)}
-        return pd.Series(ret)
+
+        self._return = self._data['assumed_f1beta10']
+        self._data['SCORE'] = self._return
+
+        #TODO: return f_beta10 for now, in future either pass in a way to score this or a custom metric
+        return self._data, self._return
+
 
 if __name__ == "__main__":
-    from sklearn.model_selection import GridSearchCV
     from sklearn.datasets import load_breast_cancer
     from sklearn.ensemble import RandomForestClassifier
 
     X, y = load_breast_cancer(return_X_y=True)
     clf = RandomForestClassifier()
-    search = GridSearchCV(clf, {'n_estimators':[10,20,30]}, scoring=FrankenScorer())
-    with TurnOffScoreCheck():
-        search.fit(X, y)
+    search = JeffRandomSearchCV(clf, {'n_estimators':[10,20,30,100]}, scoring=FrankenScorer(), n_iter=2, verbose=100)
+    search.fit(X, y)
 
     print(search.cv_results_)
 
