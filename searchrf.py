@@ -70,7 +70,7 @@ if __name__ == "__main__":
     lc = LoadCreon(path)
     X_train, X_test, y_train, y_test = train_test_split(lc.X, lc.y, test_size=0.2, random_state=771, stratify=lc.y)
 
-    rf = RandomForestClassifier(verbose=100)
+    rf = RandomForestClassifier()
     pnu = PNUWrapper(base_estimator=rf, num_unlabeled=5819, threshold_set_pct=None, random_state=4422)
     random_rf_searcher = JeffRandomSearchCV(pnu, rf_param_search, n_iter=100, scoring=FrankenScorer(), n_jobs=-1, cv=5,
                                             verbose=100)
