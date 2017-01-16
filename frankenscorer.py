@@ -41,7 +41,7 @@ class FrankenScorer():
         y_pred = estimator.predict(X)
         y_prob = estimator.predict_proba(X)
 
-        self._data = {'labeled_acc' : labeled_metric(y_true, y_pred, accuracy_score),
+        data = {'labeled_acc' : labeled_metric(y_true, y_pred, accuracy_score),
             'labeled_prec' : labeled_metric(y_true, y_pred, precision_score),
             'labeled_recall' : labeled_metric(y_true, y_pred, recall_score),
             'labeled_f1' : labeled_metric(y_true, y_pred, f1_score),
@@ -54,11 +54,11 @@ class FrankenScorer():
             'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
             'pu_score' : pu_score(y_true, y_pred)}
 
-        self._return = self._data['assumed_f1beta10']
-        self._data['SCORE'] = self._return
+        ret = data['assumed_f1beta10']
+        data['SCORE'] = ret
 
         #TODO: return f_beta10 for now, in future either pass in a way to score this or a custom metric
-        return self._data, self._return
+        return data, ret
 
 
 if __name__ == "__main__":

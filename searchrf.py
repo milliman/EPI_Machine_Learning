@@ -8,16 +8,11 @@ Created on Sun Jan  8 22:11:25 2017
 import pandas as pd
 import numpy as np
 import scipy as sp
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import RandomForestClassifier, IsolationForest
-from sklearn.metrics import f1_score, brier_score_loss, accuracy_score, confusion_matrix, precision_score,\
-    recall_score, report_metrics
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 
 from loadcreon import LoadCreon
-from creonmetrics import pu_scorer, prior_squared_error_scorer_015, \
-    brier_score_labeled_loss_scorer, f1_assumed_scorer, f1_labeled_scorer, labeled_metric, assumed_metric
-from semisuperhelper import SemiSupervisedHelper
 from pnuwrapper import PNUWrapper
 from jeffsearchcv import JeffRandomSearchCV
 from frankenscorer import FrankenScorer
@@ -49,7 +44,7 @@ Out[68]:
 
  """
 
-rf_param_search = {'base_estimator__n_estimators':sp.stats.randint(low=10, high=10000),
+rf_param_search = {'base_estimator__n_estimators':sp.stats.randint(low=10, high=100),
                    'num_unlabeled':sp.stats.randint(low=2000, high=15000),
                    'base_estimator__max_features':['sqrt','log2',5, 10, 20, 50, None],
                    'base_estimator__max_depth':sp.stats.randint(low=2, high=50),
@@ -75,7 +70,7 @@ if __name__ == "__main__":
     lc = LoadCreon(path)
     X_train, X_test, y_train, y_test = train_test_split(lc.X, lc.y, test_size=0.2, random_state=771, stratify=lc.y)
 
-    rf = RandomForestClassifier()
+    rf = RandomForestClassifier(verbose=100)
     pnu = PNUWrapper(base_estimator=rf, num_unlabeled=5819, threshold_set_pct=None, random_state=4422)
     random_rf_searcher = JeffRandomSearchCV(pnu, rf_param_search, n_iter=100, scoring=FrankenScorer(), n_jobs=-1, cv=5,
                                             verbose=100)
