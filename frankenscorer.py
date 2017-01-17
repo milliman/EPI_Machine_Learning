@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
-    average_precision_score, brier_score_loss, fbeta_score
+    average_precision_score, brier_score_loss, fbeta_score, confusion_matrix
 
 
 from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled
@@ -47,12 +47,15 @@ class FrankenScorer():
             'labeled_f1' : labeled_metric(y_true, y_pred, f1_score),
             'labeled_roc_auc' : labeled_metric(y_true, y_pred, roc_auc_score),
             'labeled_avg_prec' : labeled_metric(y_true, y_pred, average_precision_score),
+            'confustion_matrix_lab' : labeled_metric(y_true, y_pred, confusion_matrix),
             'pr_one_unlabeled' : pr_one_unlabeled(y_true, y_pred),
             'labeled_brier' : labeled_metric(y_true, y_prob, brier_score_loss),
             'assumed_brier' : assumed_metric(y_true, y_prob, brier_score_loss),
             'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
             'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
-            'pu_score' : pu_score(y_true, y_pred)}
+            'confustion_matrix_un' : assumed_metric(y_true, y_pred, confusion_matrix),
+            'pu_score' : pu_score(y_true, y_pred),
+            }
 
         ret = data['assumed_f1beta10']
         data['SCORE'] = ret

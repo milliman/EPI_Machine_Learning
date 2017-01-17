@@ -5,6 +5,7 @@ Created on Sun Jan  8 22:11:25 2017
 @author: jeffrey.gomberg
 """
 
+import datetime
 import pandas as pd
 import numpy as np
 import scipy as sp
@@ -48,7 +49,7 @@ rf_param_search = {'base_estimator__n_estimators':sp.stats.randint(low=10, high=
                    'num_unlabeled':sp.stats.randint(low=2000, high=15000),
                    'base_estimator__max_features':['sqrt','log2',5, 10, 20, 50, None],
                    #todo - make custom rvs for this type of thing where I want a None some % of the time
-                   'base_estimator__max_depth':[sp.stats.randint(low=2, high=50), None],
+                   'base_estimator__max_depth':sp.stats.randint(low=2, high=50),
                    'base_estimator__min_samples_split':sp.stats.uniform(loc=0, scale=1),
                    'base_estimator__min_samples_leaf':[1,2,3,4,5,6,7,8,9,10,50,100],
                    'base_estimator__class_weight':[None,'balanced','balanced_subsample']}
@@ -73,8 +74,9 @@ if __name__ == "__main__":
 
     rf = RandomForestClassifier()
     pnu = PNUWrapper(base_estimator=rf, num_unlabeled=5819, threshold_set_pct=None, random_state=771)
-    random_rf_searcher = JeffRandomSearchCV(pnu, rf_param_search, n_iter=100, scoring=FrankenScorer(), n_jobs=-1, cv=5,
+    random_rf_searcher = JeffRandomSearchCV(pnu, rf_param_search, n_iter=40, scoring=FrankenScorer(), n_jobs=-1, cv=3,
                                             verbose=100, pre_dispatch=8)
     random_rf_searcher.fit(X_train.values, y_train.values)
+    save_search(random_rf_searcher, '/res/random_rf_searcher_{:%Y%m%d_%H_%M}.pkl'.format(datetime.datetime.now()))
 
     #once done let's use sklearn.externals.joblib -> dump(clf, 'filename.pkl'), or -> load('filename.pkl')
