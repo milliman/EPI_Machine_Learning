@@ -34,8 +34,10 @@ from jeffsearchcv import JeffRandomSearchCV
 #        skvalid._score = self.old_score_fn
 
 class FrankenScorer():
+    score_index = "SCORE"
+
     """
-    This is a sklearn scorer object that returns a dictionary instead of a number
+    This is a sklearn scorer object that returns a (dictionary, Number) instead of a number
     """
     def __call__(self, estimator, X, y_true, sample_weight=None):
         y_pred = estimator.predict(X)
@@ -58,7 +60,7 @@ class FrankenScorer():
             }
 
         ret = data['assumed_f1beta10']
-        data['SCORE'] = ret
+        data[self.score_index] = ret
 
         #TODO: return f_beta10 for now, in future either pass in a way to score this or a custom metric
         return data, ret
@@ -70,7 +72,10 @@ if __name__ == "__main__":
 
     X, y = load_breast_cancer(return_X_y=True)
     clf = RandomForestClassifier()
-    search = JeffRandomSearchCV(clf, {'n_estimators':[10,20,30,100]}, scoring=FrankenScorer(), n_iter=2, verbose=100)
+    import scipy as sp
+    params = {'n_estimators': sp.stats.randint(low=10, high=500),
+              'max_depth':[None, 1, 2, 3, 4, 5, 10, 20]}
+    search = JeffRandomSearchCV(clf, params, scoring=FrankenScorer(), n_iter=2, verbose=100)
     search.fit(X, y)
 
     print(search.cv_results_)
