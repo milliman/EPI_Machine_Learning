@@ -77,6 +77,6 @@ if __name__ == "__main__":
     random_rf_searcher = JeffRandomSearchCV(pnu, rf_param_search, n_iter=40, scoring=FrankenScorer(), n_jobs=-1, cv=3,
                                             verbose=100, pre_dispatch=8)
     random_rf_searcher.fit(X_train.values, y_train.values)
-    save_search(random_rf_searcher, '/res/random_rf_searcher_{:%Y%m%d_%H_%M}.pkl'.format(datetime.datetime.now()))
+    save_search(random_rf_searcher, './res/random_rf_searcher_{:%Y%m%d_%H_%M}.pkl'.format(datetime.datetime.now()))
 
     #once done let's use sklearn.externals.joblib -> dump(clf, 'filename.pkl'), or -> load('filename.pkl')
