@@ -4,6 +4,8 @@ Created on Sun Jan 15 00:03:22 2017
 
 @author: jeffrey.gomberg
 """
+import copy
+from collections import defaultdict
 
 import pandas as pd
 import numpy as np
@@ -14,6 +16,53 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled
 from jeffsearchcv import JeffRandomSearchCV
+
+def extract_score_grid(searcher: JeffRandomSearchCV):
+    """
+    Take a fitted scorer that used a FrankenScorer() and extract the scoring data into a scoring grid
+
+    The scorer must have cv_results_ as an attribute
+
+    TODO - finish this comment, error checking, and break up into fewer functions
+    """
+    results = pd.DataFrame(copy.deepcopy(searcher.cv_results_))
+    splits = search.cv if search.cv is not None else 3
+    rows = len(results)
+    #create master_dict of scores
+    master_dict = {}
+    for row in rows:
+        row_dict = defaultdict(dict)
+        for split in range(splits):
+            for tpe in ['test','train']:
+                split_score_dict = copy.deepcopy(results['split{}_{}_score_data'.format(str(split), tpe)].iloc[row])
+                d = {}
+                for k, v in split_score_dict.items():
+                    new_key = "{}_{}{}".format(k,tpe,split)
+                    if hasattr(v, 'shape') and v.shape == (2, 2):
+                        #confusion matric deconstruction
+                        tn, fp, fn, tp = v.ravel()
+                        d["tn_%s" % new_key] = tn
+                        d["fp_%s" % new_key] = fp
+                        d["fn_%s" % new_key] = fn
+                        d["tp_%s" % new_key] = tp
+                    if FrankenScorer.score_index != k:
+                        #don't include the "SCORE" score in the grid
+                        d[new_key] = v
+                row_dict[row].update(d)
+        master_dict.update(row_dict)
+
+    score_grid = pd.DataFrame.from_dict(master_dict, orient="index")
+    score_labels = set([s[:-1] for s in score_grid.columns])
+
+    #compute mean and std
+    for label in score_labels:
+        label_score_grid = score_grid[[s for s in score_grid.columns if label == s[:-1]]]
+        mean_for_label = label_score_grid.mean(axis=1)
+        std_for_label = label_score_grid.std(axis=1)
+        score_grid["mean_{}".format(label)] = mean_for_label
+        score_grid["std_{}".format(label)] = std_for_label
+
+    return score_grid
 
 #class TurnOffScoreCheck(ContextDecorator):
 #    """
@@ -49,13 +98,13 @@ class FrankenScorer():
             'labeled_f1' : labeled_metric(y_true, y_pred, f1_score),
             'labeled_roc_auc' : labeled_metric(y_true, y_pred, roc_auc_score),
             'labeled_avg_prec' : labeled_metric(y_true, y_pred, average_precision_score),
-            'confustion_matrix_lab' : labeled_metric(y_true, y_pred, confusion_matrix),
+            'confusion_matrix_lab' : labeled_metric(y_true, y_pred, confusion_matrix),
             'pr_one_unlabeled' : pr_one_unlabeled(y_true, y_pred),
             'labeled_brier' : labeled_metric(y_true, y_prob, brier_score_loss),
             'assumed_brier' : assumed_metric(y_true, y_prob, brier_score_loss),
             'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
             'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
-            'confustion_matrix_un' : assumed_metric(y_true, y_pred, confusion_matrix),
+            'confusion_matrix_un' : assumed_metric(y_true, y_pred, confusion_matrix),
             'pu_score' : pu_score(y_true, y_pred),
             }
 
