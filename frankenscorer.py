@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
     average_precision_score, brier_score_loss, fbeta_score, confusion_matrix
 
 
-from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled
+from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled, brier_score_partial_loss
 from jeffsearchcv import JeffRandomSearchCV
 
 def extract_score_grid(searcher: JeffRandomSearchCV):
@@ -22,6 +22,8 @@ def extract_score_grid(searcher: JeffRandomSearchCV):
     Take a fitted scorer that used a FrankenScorer() and extract the scoring data into a scoring grid
 
     The scorer must have cv_results_ as an attribute
+
+    return: DataFrame of scores with means and std columns for each one as well when possible
 
     TODO - finish this comment, error checking, and break up into fewer functions
     """
@@ -98,10 +100,13 @@ class FrankenScorer():
             'labeled_f1' : labeled_metric(y_true, y_pred, f1_score),
             'labeled_roc_auc' : labeled_metric(y_true, y_pred, roc_auc_score),
             'labeled_avg_prec' : labeled_metric(y_true, y_pred, average_precision_score),
+            'labeled_brier' : labeled_metric(y_true, y_prob, brier_score_loss),
+            'labeled_brier_pos' : labeled_metric(y_true, y_prob, brier_score_partial_loss, label=1),
+            'labeled_brier_neg' : labeled_metric(y_true, y_prob, brier_score_partial_loss, label=0),
             'confusion_matrix_lab' : labeled_metric(y_true, y_pred, confusion_matrix),
             'pr_one_unlabeled' : pr_one_unlabeled(y_true, y_pred),
-            'labeled_brier' : labeled_metric(y_true, y_prob, brier_score_loss),
             'assumed_brier' : assumed_metric(y_true, y_prob, brier_score_loss),
+            'assumed_brier_neg' : assumed_metric(y_true, y_prob, brier_score_partial_loss, label=0),
             'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
             'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
             'confusion_matrix_un' : assumed_metric(y_true, y_pred, confusion_matrix),

@@ -9,6 +9,7 @@ This file will contain our custom scoring metrics
 """
 
 import pandas as pd
+import numpy as np
 from functools import partial
 from sklearn.metrics import brier_score_loss, roc_auc_score, average_precision_score, f1_score, fbeta_score, \
     accuracy_score, recall_score, precision_score
@@ -32,6 +33,38 @@ def pu_score(y_true, y_pred):
    pr_true = (y_pred == 1).sum() / len(y_pred)
 
    return recall * recall / pr_true
+
+def brier_score_partial_loss(y_true, y_prob, sample_weight=None, label=None):
+    """ Compute the partial brier score
+
+    Parameters
+    ----------
+    y_true : array, shape (n_samples,)
+        True targets.
+
+    y_prob : array, shape (n_samples,)
+        Probabilities of the positive class.
+
+    sample_weight : array-like of shape = [n_samples], optional
+        Sample weights.
+
+    label : int, default=None
+        Label of the class we will compute the brier score for. If None, this is a normal brier score
+
+    Returns
+    -------
+    score : float
+        Brier score for label
+    """
+
+    if label is not None:
+        mask = y_true == label
+        y_true = y_true[mask]
+        y_prob = y_prob[mask]
+        sample_weight = sample_weight[mask] if sample_weight is not None else sample_weight
+
+    print("label: {} y_true:{} y_prob:{} sample_weight:{}".format(label, y_true, y_prob, sample_weight))
+    return np.average((y_true - y_prob) ** 2, weights=sample_weight)
 
 def report_metrics(clf, X, y_true):
     """

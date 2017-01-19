@@ -26,7 +26,8 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     and error checking
     """
 
-    def __init__(self, base_estimator=None, num_unlabeled=0.0, threshold_set_pct=None, random_state=None):
+    def __init__(self, base_estimator=None, num_unlabeled=0.0, threshold_set_pct=None, pu_learning=False,
+                 random_state=None):
         """
         If num_unlabeled is float, then use that % of unlabeled in training
         If num_unlabeled is an int, then use that number of unlabeled data to train
@@ -36,11 +37,13 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
             look at example #5 and see that predict_proba=0.4, then in the future anything >= 0.4 is predicted positive.
             If it is left None, then calibration on the unseen data will not be used
         All unlabeled data is assumed to be of class "0"
+        if pu_learning == True, then throw away negatives in the set and train only on P and U class (default False)
         """
         self.base_estimator = base_estimator
         self.num_unlabeled = num_unlabeled
         self.random_state = random_state
         self.threshold_set_pct = threshold_set_pct
+        self.pu_learning = pu_learning
 
     def fit(self, X, y):
         random_state = check_random_state(self.random_state)
@@ -53,14 +56,19 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
         if self.base_estimator is None:
             raise ValueError("base_estimator must be defined before running fit")
         if self.num_unlabeled < 0:
-            raise ValueError("num_unlabeled must be > 0")
+            raise ValueError("num_unlabeled must be >= 0")
+
+        ssh = SemiSupervisedHelper(y, random_state=random_state)
+        if self.pu_learning:
+            X, y = ssh.pu(X)
+            ssh = SemiSupervisedHelper(y, random_state=random_state)
+
         # Store the classes seen during fit
         self.classes_ = np.asarray([0, 1])
         self.n_features_ = X.shape[1]
         self.X_ = X
         self.y_ = y
 
-        ssh = SemiSupervisedHelper(y, random_state=random_state)
         X_temp, y_temp, X_unlabeled_unused = ssh.pn_assume(X, unlabeled_pct=self.num_unlabeled)
         self.base_estimator.fit(X_temp, y_temp)
 
