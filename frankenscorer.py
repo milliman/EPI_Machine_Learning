@@ -26,11 +26,11 @@ def extract_score_grid(searcher: JeffRandomSearchCV):
     TODO - finish this comment, error checking, and break up into fewer functions
     """
     results = pd.DataFrame(copy.deepcopy(searcher.cv_results_))
-    splits = search.cv if search.cv is not None else 3
+    splits = searcher.cv if searcher.cv is not None else 3
     rows = len(results)
     #create master_dict of scores
     master_dict = {}
-    for row in rows:
+    for row in range(rows):
         row_dict = defaultdict(dict)
         for split in range(splits):
             for tpe in ['test','train']:
