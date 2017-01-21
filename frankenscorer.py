@@ -13,9 +13,31 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score, brier_score_loss, fbeta_score, confusion_matrix
 
-
 from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled, brier_score_partial_loss
 from jeffsearchcv import JeffRandomSearchCV
+
+def extract_scores_from_nested(scores):
+    """ Extract scores from a sequence of dicts
+    Returns a DataFrame where rows are CV, columns scores - use in conjuntion with NestedCV
+    """
+    row_dict = defaultdict(dict)
+    for i, split_score_dict in enumerate(scores):
+        d = {}
+        for k, v in split_score_dict.items():
+            if hasattr(v, "shape") and v.shape == (2, 2):
+                tn, fp, fn, tp = v.ravel()
+                d["tn_%s" % k] = tn
+                d["fp_%s" % k] = fp
+                d["fn_%s" % k] = fn
+                d["tp_%s" % k] = tp
+            if FrankenScorer.score_index != k:
+                #don't include the "SCORE" score in the grid
+                d[k] = v
+        row_dict[i].update(d)
+
+    score_grid = pd.DataFrame.from_dict(row_dict, orient="index")
+    return score_grid
+
 
 def extract_score_grid(searcher: JeffRandomSearchCV):
     """
@@ -24,6 +46,7 @@ def extract_score_grid(searcher: JeffRandomSearchCV):
     The scorer must have cv_results_ as an attribute
 
     return: DataFrame of scores with means and std columns for each one as well when possible
+        row is an iteration of a model, with columns of scores with splits with means, etc.
 
     TODO - finish this comment, error checking, and break up into fewer functions
     """
@@ -120,7 +143,7 @@ class FrankenScorer():
         return data, ret
 
 
-if __name__ == "__main__":
+if __name__ == "__main__XXXXX":
     from sklearn.datasets import load_breast_cancer
     from sklearn.ensemble import RandomForestClassifier
 

@@ -21,13 +21,12 @@ from sklearn.utils.validation import _num_samples, indexable
 from sklearn.utils.fixes import rankdata, MaskedArray
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals.joblib import logger, Parallel, delayed
-
 from sklearn.metrics.scorer import check_scoring
 
 def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose,
                    parameters, fit_params, return_train_score=False,
                    return_parameters=False, return_n_test_samples=False,
-                   return_times=False, error_score='raise'):
+                   return_times=False, error_score='raise', return_estimator=False):
     """Fit estimator and compute scores for a given dataset split. Allows for scorers that hold more information than
     just a vanilla scorer (ie, Frankenscorer!)
 
@@ -74,10 +73,19 @@ def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose
     return_parameters : boolean, optional, default: False
         Return parameters that has been used for the estimator.
 
+    return_estimator : boolean, optional, default: False
+        Return the fit estimator
+
     Returns
     -------
+    train_score_data : dict, optional
+        Dictionary of scores on training set, returned only if `return_train_score` is `True`
+
     train_score : float, optional
         Score on training set, returned only if `return_train_score` is `True`.
+
+    test_score_data : dict
+        Dictionary of scores on test set
 
     test_score : float
         Score on test set.
@@ -93,6 +101,9 @@ def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose
 
     parameters : dict or None, optional
         The parameters that have been evaluated.
+
+    estimator : fit estimator, optional
+        The estimator that is fit
     """
     if verbose > 1:
         if parameters is None:
@@ -164,6 +175,8 @@ def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose
         ret.extend([fit_time, score_time])
     if return_parameters:
         ret.append(parameters)
+    if return_estimator:
+        ret.append(estimator)
     return ret
 
 def _score_no_number_check(estimator, X_test, y_test, scorer):
