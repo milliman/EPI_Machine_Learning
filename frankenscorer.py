@@ -110,6 +110,9 @@ def extract_score_grid(searcher: JeffRandomSearchCV):
 class FrankenScorer():
     score_index = "SCORE"
 
+    def __init__(self, decision_score='labeled_f1'):
+        self.decision_score = decision_score
+
     """
     This is a sklearn scorer object that returns a (dictionary, Number) instead of a number
     """
@@ -136,11 +139,14 @@ class FrankenScorer():
             'pu_score' : pu_score(y_true, y_pred),
             }
 
-        ret = data['assumed_f1beta10']
+        ret = data[self.decision_score]
         data[self.score_index] = ret
 
-        #TODO: return f_beta10 for now, in future either pass in a way to score this or a custom metric
         return data, ret
+
+    def change_decision_score(self, decision_score):
+        self.decision_score = decision_score
+        return self
 
 
 if __name__ == "__main__XXXXX":

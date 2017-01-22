@@ -6,6 +6,7 @@ Created on Sat Jan 14 23:41:21 2017
 """
 
 import numpy as np
+import pandas as pd
 
 from sklearn.model_selection._validation import indexable
 from sklearn.model_selection._split import check_cv
@@ -14,6 +15,7 @@ from sklearn.metrics.scorer import check_scoring
 from sklearn.externals.joblib import Parallel, delayed
 
 from jeffsearchcv import _fit_and_score_with_extra_data
+from frankenscorer import extract_score_grid
 
 #TODO may want to write some helper functions to re-calc a search, find best estimators from grids
 #and then train those models with those parameters and use the self.cv_iter_ to figure out how to get
@@ -57,3 +59,42 @@ class NestedCV():
                  self.fit_times_, self.score_times_, self.estimators_) = zip(*scores)
 
         return self.test_scores_
+
+def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=None,
+                             how='max', n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
+    """ Rerun a nested CV gred / random hyper param run but very efficiently by using the stored scoring data
+    from a previous run
+
+    Parameters
+    ----------
+    nested : An already "scored" NestedCV
+    score : A string of a score calculated during the scoring run of nested
+    how : 'max' or 'min', optional, default='max'
+        will look for the min or max of the score provided
+    Returns
+    -------
+    nested with new values
+    """
+    sub_scores = [extract_score_grid(searcher) for searcher in nested.estimators_]
+    sub_scores_means = [sub_score[[c for c in sub_score.columns if 'test' in c and 'mean' in c]] \
+                        for sub_score in sub_scores]
+    def create_summary(mean_table):
+        return pd.DataFrame({'maxidx':mean_table.idxmax(), 'max':mean_table.max(),
+                             'min':mean_table.min(), 'minidx':mean_table.idxmin()})
+    sub_scores_summary = [create_summary(mean_table) for mean_table in sub_scores_means]
+    row = "mean_{}_test".format(score)
+    col = how + "idx"
+    idxs = [summary.loc[row, col] for summary in sub_scores_summary]
+    params = [pd.DataFrame(estimator.cv_results_)['params'][idx] for idx, estimator in zip(idxs, nested.estimators_)]
+    new_estimators = [clone(estimator.estimator).set_params(**param) for param, estimator in zip(params, nested.estimators_)]
+    if hasattr(nested.scoring, 'change_decision_score'):
+        new_scoring = nested.scoring.change_decision_score(score)
+    else:
+        new_scoring = nested.scoring
+    parallel = Parallel(n_jobs=n_jobs, verbose=verbose, pre_dispatch=pre_dispatch)
+    scores = parallel(delayed(_fit_and_score_with_extra_data)(estimator, X, y, check_scoring(estimator, new_scoring), train, test,
+                      verbose, None, nested.fit_params, return_train_score=True, return_times=True)
+        for (train, test), estimator in zip(nested.cv_iter_, new_estimators))
+    (nested.train_score_datas_, nested.train_scores_, nested.test_score_datas_, nested.test_scores_,
+                 nested.fit_times_, nested.score_times_) = zip(*scores)
+    return nested

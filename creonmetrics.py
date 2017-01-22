@@ -30,6 +30,9 @@ def pu_score(y_true, y_pred):
    n_pos = (y_true == 1).sum() if tp > 0 else 1
    recall = tp / n_pos
 
+   if recall == 0.0:
+       return 0.0
+
    pr_true = (y_pred == 1).sum() / len(y_pred)
 
    return recall * recall / pr_true
@@ -63,7 +66,6 @@ def brier_score_partial_loss(y_true, y_prob, sample_weight=None, label=None):
         y_prob = y_prob[mask]
         sample_weight = sample_weight[mask] if sample_weight is not None else sample_weight
 
-    print("label: {} y_true:{} y_prob:{} sample_weight:{}".format(label, y_true, y_prob, sample_weight))
     return np.average((y_true - y_prob) ** 2, weights=sample_weight)
 
 def report_metrics(clf, X, y_true):
@@ -172,3 +174,4 @@ brier_score_labeled_loss_scorer = make_label_scorer(brier_score_loss, greater_is
 brier_score_assumed_loss_scorer = make_assumed_scorer(brier_score_loss, greater_is_better=False, needs_proba=True)
 f1_labeled_scorer = make_label_scorer(f1_score)
 f1_assumed_scorer = make_assumed_scorer(f1_score)
+f1_assumed_beta10_scorer = make_assumed_scorer(fbeta_score, beta=10)

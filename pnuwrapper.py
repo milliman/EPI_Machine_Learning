@@ -10,11 +10,6 @@ from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 
-#TODO - remove me below
-from sklearn.ensemble import BaggingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-
 from semisuperhelper import SemiSupervisedHelper
 
 
@@ -72,15 +67,13 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
         X_temp, y_temp, X_unlabeled_unused = ssh.pn_assume(X, unlabeled_pct=self.num_unlabeled)
         self.base_estimator.fit(X_temp, y_temp)
 
-        #TODO - error checking on the block below - good threshold_set_pct, enough unlableds, etc.
         if hasattr(self.base_estimator, 'decision_function'):
             self.threshold_fn_ = self.base_estimator.decision_function
         elif hasattr(self.base_estimator, 'predict_proba'):
             self.threshold_fn_ = self.base_estimator.predict_proba
         else:
             self.threshold_fn_ = None
-        if self.threshold_fn_ is not None and self.threshold_set_pct is not None and len(X_unlabeled_unused > 0):
-            #TODO - change this here to decision function
+        if self.threshold_fn_ is not None and self.threshold_set_pct is not None and len(X_unlabeled_unused) > 0:
             unlabeled_threshold = self.threshold_fn_(X_unlabeled_unused)
             if len(unlabeled_threshold.shape) > 1:
                 unlabeled_threshold = unlabeled_threshold[:, -1]
