@@ -58,6 +58,9 @@ class NestedCV():
         (self.train_score_datas_, self.train_scores_, self.test_score_datas_, self.test_scores_,
                  self.fit_times_, self.score_times_, self.estimators_) = zip(*scores)
 
+        self.best_params_ = [estimator.best_params_ for estimator in self.estimators_]
+        self.best_idxs_ = [estimator.best_index_ for estimator in self.estimators_]
+
         return self.test_scores_
 
 def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=None,
@@ -86,6 +89,8 @@ def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=Non
     col = how + "idx"
     idxs = [summary.loc[row, col] for summary in sub_scores_summary]
     params = [pd.DataFrame(estimator.cv_results_)['params'][idx] for idx, estimator in zip(idxs, nested.estimators_)]
+    nested.best_params_ = params
+    nested.best_idxs_ = idxs
     new_estimators = [clone(estimator.estimator).set_params(**param) for param, estimator in zip(params, nested.estimators_)]
     if hasattr(nested.scoring, 'change_decision_score'):
         new_scoring = nested.scoring.change_decision_score(score)

@@ -89,6 +89,12 @@ def extract_score_grid(searcher: JeffRandomSearchCV):
 
     return score_grid
 
+def get_mean_test_scores(score_grid):
+    """ Return the "mean" and "test" columns of the score grid dataset
+    """
+    score_grid = score_grid.copy()
+    return score_grid[[c for c in score_grid.columns if 'test' in c and 'mean' in c]]
+
 #class TurnOffScoreCheck(ContextDecorator):
 #    """
 #    Use this to turn off the check in sklearn that checks if a scorer returns a Number or not.
@@ -149,7 +155,8 @@ class FrankenScorer():
         return self
 
 
-if __name__ == "__main__XXXXX":
+if __name__ == "__main__":
+    #Just use this for testing
     from sklearn.datasets import load_breast_cancer
     from sklearn.ensemble import RandomForestClassifier
 
