@@ -7,11 +7,14 @@ Created on Tue Jan 10 07:44:05 2017
 """
 
 import numpy as np
+from contextlib import ContextDecorator
 import sklearn
 from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble.bagging import _generate_indices
 from sklearn.utils.validation import has_fit_parameter
 from sklearn.utils.fixes import bincount
 from sklearn.utils import indices_to_mask
+from sklearn.utils import check_random_state
 
 __all__ = ["BlaggingClassifier"]
 
@@ -93,40 +96,42 @@ def _parallel_build_estimators(n_estimators, ensemble, X, y, sample_weight,
 
     return estimators, estimators_features
 
-class BlaggingClassifier(BaggingClassifier):
+class BaggingTransformedIntoBalancedSampler(ContextDecorator):
+    """
+    Use this to map functions in Bagging Classifier to custom versions.
+    WARNING: This is not threadsafe!
 
-    def __init__(self,
-                 base_estimator=None,
-                 n_estimators=10,
-                 max_samples=1.0,
-                 max_features=1.0,
-                 bootstrap=True,
-                 bootstrap_features=False,
-                 oob_score=False,
-                 warm_start=False,
-                 n_jobs=1,
-                 random_state=None,
-                 verbose=0):
+    Example usages::
+        @BaggingTransformedIntoBalancedSampler()
+        def bag_it(clf, X, y, scorer=frankenscorer)
 
-        # WARNING - this is dangerous - need to set this back if going to use any real Bagging ensembles through sklearn
-        self.orig_parallel_build_estimators = sklearn.ensemble.bagging._parallel_build_estimators
-        self.orig_generate_bagging_indices = sklearn.ensemble.bagging._generate_bagging_indices
-        sklearn.ensemble.bagging._parallel_build_estimators =_parallel_build_estimators
-        sklearn.ensemble.bagging._generate_bagging_indices = _generate_bagging_indices
-        super(BlaggingClassifier, self).__init__(
-            base_estimator,
-            n_estimators=n_estimators,
-            max_samples=max_samples,
-            max_features=max_features,
-            bootstrap=bootstrap,
-            bootstrap_features=bootstrap_features,
-            oob_score=oob_score,
-            warm_start=warm_start,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose)
+        with BaggingTransformedIntoBalancedSampler():
+            bagger.fit(X, y)
+    """
+    _orig_parallel_build_estimators = None
 
-    def __del__(self):
-        print("BlaggingClassifier.changed back!")
-        sklearn.ensemble.bagging._parallel_build_estimators = self.orig_parallel_build_estimators
-        sklearn.ensemble.bagging._generate_bagging_indices = self.orig_generate_bagging_indices
+    def __enter__(self):
+        if self._orig_parallel_build_estimators is None:
+            self.set_original_parallel_build_estimators(sklearn.ensemble.bagging._parallel_build_estimators)
+            sklearn.ensemble.bagging._parallel_build_estimators =_parallel_build_estimators
+
+    def __exit__(self, *exc):
+        sklearn.ensemble.bagging._parallel_build_estimators = self._orig_parallel_build_estimators
+        self.reset_original_parallel_build_estimators()
+
+    @classmethod
+    def set_original_parallel_build_estimators(cls, fn):
+        cls._orig_parallel_build_estimators = fn
+
+    @classmethod
+    def reset_original_parallel_build_estimators(cls):
+        cls._orig_parallel_build_estimators = None
+
+if __name__ == "__main__":
+    from sklearn.datasets import load_breast_cancer
+    X, y = load_breast_cancer(return_X_y=True)
+    from sklearn.ensemble import RandomForestClassifier
+    clf = BaggingClassifier(RandomForestClassifier())
+    #with BaggingTransformedIntoBalancedSampler():
+    clf.fit(X, y)
+
