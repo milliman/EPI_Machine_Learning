@@ -95,24 +95,6 @@ def get_mean_test_scores(score_grid):
     score_grid = score_grid.copy()
     return score_grid[[c for c in score_grid.columns if 'test' in c and 'mean' in c]]
 
-#class TurnOffScoreCheck(ContextDecorator):
-#    """
-#    Use this to turn off the check in sklearn that checks if a scorer returns a Number or not.
-#
-#    Example usages::
-#        @TurnOffScoreCheck()
-#        def scorers_gone_wild(clf, X, y, scorer=frankenscorer)
-#
-#        with TurnOffScoreCheck():
-#            scorers_gone_wile(clf, X, y, scorer=frankenscorer)
-#    """
-#    def __enter__(self):
-#        self.old_score_fn = skvalid._score
-#        skvalid._score = _score_no_number_check
-#
-#    def __exit__(self, *exc):
-#        skvalid._score = self.old_score_fn
-
 class FrankenScorer():
     score_index = "SCORE"
 
@@ -169,9 +151,3 @@ if __name__ == "__main__":
     search.fit(X, y)
 
     print(search.cv_results_)
-
-    #LINE 266 of _validation.py can't print out a non-float score!!! (only verbose > 2) (function _fit_and_score())
-    #LINE 582 in _search.py can't reshape an array with other arrays, dtype=np.float64 may be a problem (_fit())
-    #So I may need to rewrite / copy / paste _fit_and_score() and _fit(), maybe make the FrankenScorer
-    #return an object of state along with a number so that I can then store that object
-

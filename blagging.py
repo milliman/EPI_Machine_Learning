@@ -5,21 +5,42 @@ Created on Tue Jan 10 07:44:05 2017
 
 @author: jgomberg
 """
-
+import numbers
+import itertools
+from warnings import warn
 import numpy as np
-import sklearn
+
+from sklearn.externals.joblib import Parallel, delayed
 from sklearn.ensemble import BaggingClassifier
 from sklearn.utils.validation import has_fit_parameter
 from sklearn.utils.fixes import bincount
 from sklearn.utils import indices_to_mask
+from sklearn.utils import check_random_state
+from sklearn.ensemble.base import _partition_estimators
+from sklearn.utils.validation import check_X_y
+from sklearn.utils.random import sample_without_replacement
 
 __all__ = ["BlaggingClassifier"]
 
 MAX_INT = np.iinfo(np.int32).max
 
+def _generate_class_indexes(y):
+    return [np.where(y==c)[0] for c in np.unique(y)]
+
+def _generate_indices(random_state, bootstrap, n_population, n_samples):
+    """Draw randomly sampled indices."""
+    # Draw sample indices
+    if bootstrap:
+        indices = random_state.randint(0, n_population, n_samples)
+    else:
+        indices = sample_without_replacement(n_population, n_samples,
+                                             random_state=random_state)
+
+    return indices
+
 def _generate_bagging_indices(random_state, bootstrap_features,
                               bootstrap_samples, n_features, n_samples,
-                              max_features, max_samples):
+                              max_features, max_samples, stratify, sample_imbalance, y):
     """Randomly draw feature and sample indices."""
     # Get valid random state
     random_state = check_random_state(random_state)
@@ -33,8 +54,8 @@ def _generate_bagging_indices(random_state, bootstrap_features,
     return feature_indices, sample_indices
 
 
-def _parallel_build_estimators(n_estimators, ensemble, X, y, sample_weight,
-                       seeds, total_n_estimators, verbose):
+def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_weight, stratify,
+                                        sample_imbalance, seeds, total_n_estimators, verbose):
     """Private function used to build a batch of estimators within a job."""
     # Retrieve settings
     print("RIGHT CALL!!!")
@@ -66,7 +87,8 @@ def _parallel_build_estimators(n_estimators, ensemble, X, y, sample_weight,
                                                       bootstrap_features,
                                                       bootstrap, n_features,
                                                       n_samples, max_features,
-                                                      max_samples)
+                                                      max_samples,
+                                                      stratify, sample_imbalance, y)
 
         # Draw samples, using sample weights, and then fit
         if support_sample_weight:
@@ -94,7 +116,19 @@ def _parallel_build_estimators(n_estimators, ensemble, X, y, sample_weight,
     return estimators, estimators_features
 
 class BlaggingClassifier(BaggingClassifier):
+    """ Blagging Classifier - just like Bagging but with more options to deal with
+    imblanced classes.
 
+    See :ref: Bagging in sklearn.ensembles
+
+    Parameters
+    ----------
+    stratify : optional, default = False
+        Will choose from the two classes the same amount as their natural imbalance
+
+    sample_imbalance : optional, default = 1.0
+        Number from 1.0 to 0.01.  Represents n_minority_class / n_majority_class in each Bag
+    """
     def __init__(self,
                  base_estimator=None,
                  n_estimators=10,
@@ -102,18 +136,18 @@ class BlaggingClassifier(BaggingClassifier):
                  max_features=1.0,
                  bootstrap=True,
                  bootstrap_features=False,
+                 stratify=False,
+                 sample_imbalance=1.0,
                  oob_score=False,
                  warm_start=False,
                  n_jobs=1,
                  random_state=None,
                  verbose=0):
 
-        # WARNING - this is dangerous - need to set this back if going to use any real Bagging ensembles through sklearn
-        self.orig_parallel_build_estimators = sklearn.ensemble.bagging._parallel_build_estimators
-        self.orig_generate_bagging_indices = sklearn.ensemble.bagging._generate_bagging_indices
-        sklearn.ensemble.bagging._parallel_build_estimators =_parallel_build_estimators
-        sklearn.ensemble.bagging._generate_bagging_indices = _generate_bagging_indices
-        super(BlaggingClassifier, self).__init__(
+        self.stratify = stratify
+        self.sample_imbalance = sample_imbalance
+
+        super(BaggingClassifier, self).__init__(
             base_estimator,
             n_estimators=n_estimators,
             max_samples=max_samples,
@@ -126,7 +160,147 @@ class BlaggingClassifier(BaggingClassifier):
             random_state=random_state,
             verbose=verbose)
 
-    def __del__(self):
-        print("BlaggingClassifier.changed back!")
-        sklearn.ensemble.bagging._parallel_build_estimators = self.orig_parallel_build_estimators
-        sklearn.ensemble.bagging._generate_bagging_indices = self.orig_generate_bagging_indices
+    def _fit(self, X, y, max_samples=None, max_depth=None, sample_weight=None):
+        """Build a Bagging ensemble of estimators from the training
+           set (X, y).
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix} of shape = [n_samples, n_features]
+            The training input samples. Sparse matrices are accepted only if
+            they are supported by the base estimator.
+
+        y : array-like, shape = [n_samples]
+            The target values (class labels in classification, real numbers in
+            regression).
+
+        max_samples : int or float, optional (default=None)
+            Argument to use instead of self.max_samples.
+
+        max_depth : int, optional (default=None)
+            Override value used when constructing base estimator. Only
+            supported if the base estimator has a max_depth parameter.
+
+        sample_weight : array-like, shape = [n_samples] or None
+            Sample weights. If None, then samples are equally weighted.
+            Note that this is supported only if the base estimator supports
+            sample weighting.
+
+        Returns
+        -------
+        self : object
+            Returns self.
+        """
+        random_state = check_random_state(self.random_state)
+
+        # Convert data
+        X, y = check_X_y(X, y, ['csr', 'csc'])
+
+        # Remap output
+        n_samples, self.n_features_ = X.shape
+        self._n_samples = n_samples
+        y = self._validate_y(y)
+
+        # Check parameters
+        self._validate_estimator()
+
+        if max_depth is not None:
+            self.base_estimator_.max_depth = max_depth
+
+        # Validate max_samples
+        if max_samples is None:
+            max_samples = self.max_samples
+        elif not isinstance(max_samples, (numbers.Integral, np.integer)):
+            max_samples = int(max_samples * X.shape[0])
+
+        if not (0 < max_samples <= X.shape[0]):
+            raise ValueError("max_samples must be in (0, n_samples]")
+
+        # Store validated integer row sampling value
+        self._max_samples = max_samples
+
+        # Validate max_features
+        if isinstance(self.max_features, (numbers.Integral, np.integer)):
+            max_features = self.max_features
+        else:  # float
+            max_features = int(self.max_features * self.n_features_)
+
+        if not (0 < max_features <= self.n_features_):
+            raise ValueError("max_features must be in (0, n_features]")
+
+        # Store validated integer feature sampling value
+        self._max_features = max_features
+
+        # Other checks
+        if not self.bootstrap and self.oob_score:
+            raise ValueError("Out of bag estimation only available"
+                             " if bootstrap=True")
+
+        if self.warm_start and self.oob_score:
+            raise ValueError("Out of bag estimate only available"
+                             " if warm_start=False")
+
+        if hasattr(self, "oob_score_") and self.warm_start:
+            del self.oob_score_
+
+        if not self.warm_start or len(self.estimators_) == 0:
+            # Free allocated memory, if any
+            self.estimators_ = []
+            self.estimators_features_ = []
+
+        n_more_estimators = self.n_estimators - len(self.estimators_)
+
+        if n_more_estimators < 0:
+            raise ValueError('n_estimators=%d must be larger or equal to '
+                             'len(estimators_)=%d when warm_start==True'
+                             % (self.n_estimators, len(self.estimators_)))
+
+        elif n_more_estimators == 0:
+            warn("Warm-start fitting without increasing n_estimators does not "
+                 "fit new trees.")
+            return self
+
+        # Parallel loop
+        n_jobs, n_estimators, starts = _partition_estimators(n_more_estimators,
+                                                             self.n_jobs)
+        total_n_estimators = sum(n_estimators)
+
+        # Advance random state to state after training
+        # the first n_estimators
+        if self.warm_start and len(self.estimators_) > 0:
+            random_state.randint(MAX_INT, size=len(self.estimators_))
+
+        seeds = random_state.randint(MAX_INT, size=n_more_estimators)
+        self._seeds = seeds
+
+        all_results = Parallel(n_jobs=n_jobs, verbose=self.verbose)(
+            delayed(_parallel_build_estimators_balanced)(
+                n_estimators[i],
+                self,
+                X,
+                y,
+                sample_weight,
+                seeds[starts[i]:starts[i + 1]],
+                total_n_estimators,
+                verbose=self.verbose)
+            for i in range(n_jobs))
+
+        # Reduce
+        self.estimators_ += list(itertools.chain.from_iterable(
+            t[0] for t in all_results))
+        self.estimators_features_ += list(itertools.chain.from_iterable(
+            t[1] for t in all_results))
+
+        if self.oob_score:
+            self._set_oob_score(X, y)
+
+        return self
+
+if __name__ == "__main__":
+    from sklearn.datasets import load_breast_cancer
+    X, y = load_breast_cancer(return_X_y=True)
+    from sklearn.ensemble import RandomForestClassifier
+    clf = BaggingClassifier(RandomForestClassifier())
+    #with BaggingTransformedIntoBalancedSampler():
+    clf.fit(X, y)
+
