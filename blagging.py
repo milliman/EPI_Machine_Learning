@@ -18,7 +18,7 @@ from sklearn.utils import indices_to_mask
 from sklearn.utils import check_random_state
 from sklearn.ensemble.base import _partition_estimators
 from sklearn.utils.validation import check_X_y
-from sklearn.utils.random import sample_without_replacement
+from sklearn.utils.random import sample_without_replacement, choice
 
 __all__ = ["BlaggingClassifier"]
 
@@ -27,8 +27,13 @@ MAX_INT = np.iinfo(np.int32).max
 def _generate_class_indexes(y):
     return [np.where(y==c)[0] for c in np.unique(y)]
 
-def _generate_indices(random_state, bootstrap, n_population, n_samples):
+def _generate_indices(random_state, bootstrap, n_population, n_samples,
+                      stratify=False, sample_imbalance=None, y=None):
     """Draw randomly sampled indices."""
+    if (stratify == True or sample_imbalance is not None) and y is None:
+        raise ValueError('y cannot be None if stratify or sample_imbalance is set')
+
+    #TODO - finish me! (choice(class_idxs[0], size=samples_for_class, replace=bootstrap))
     # Draw sample indices
     if bootstrap:
         indices = random_state.randint(0, n_population, n_samples)
@@ -44,6 +49,10 @@ def _generate_bagging_indices(random_state, bootstrap_features,
     """Randomly draw feature and sample indices."""
     # Get valid random state
     random_state = check_random_state(random_state)
+
+    #TODO - do some checks here to figure out how max_samples is effected by sample_imbalance
+    #and then redo the calc for max_samples to make sure it adheres to the sample_imbalance
+    #elegantly
 
     # Draw indices
     feature_indices = _generate_indices(random_state, bootstrap_features,
