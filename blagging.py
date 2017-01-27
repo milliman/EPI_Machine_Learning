@@ -9,6 +9,7 @@ import numbers
 import itertools
 from warnings import warn
 import numpy as np
+import math
 
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.ensemble import BaggingClassifier
@@ -28,14 +29,29 @@ def _generate_class_indexes(y):
     return [np.where(y==c)[0] for c in np.unique(y)]
 
 def _generate_indices(random_state, bootstrap, n_population, n_samples,
-                      stratify=False, sample_imbalance=None, y=None):
+                      sample_imbalance=None, y=None):
     """Draw randomly sampled indices."""
-    if (stratify == True or sample_imbalance is not None) and y is None:
-        raise ValueError('y cannot be None if stratify or sample_imbalance is set')
 
-    #TODO - finish me! (choice(class_idxs[0], size=samples_for_class, replace=bootstrap))
-    # Draw sample indices
-    if bootstrap:
+    #Find how many samples to take
+    if sample_imbalance is not None:
+        class_idxs = _generate_class_indexes(y)
+        class_len = [len(class_idx) for class_idx in class_idxs]
+        minority_class_idx = np.argmin(class_len)
+        majority_class_idx = np.argmax(class_len)
+        min_samples = class_len[minority_class_idx]
+        maj_samples = int(min_samples / sample_imbalance)
+        maj_n = class_len[majority_class_idx]
+        if maj_samples > maj_n:
+            raise ValueError("more majority samples than exist in majority class %i > %i" % (maj_samples, maj_n))
+        if (maj_samples + min_samples) > n_samples:
+            #keep ratio but cut samples
+            excess = maj_samples + min_samples - n_samples
+            maj_samples = max(maj_samples - math.ceil(excess / 2.0), 1)
+            min_samples = max(min_samples - math.floor(excess / 2.0), 1)
+        maj_indices = choice(class_idxs[majority_class_idx], size=maj_samples, replace=bootstrap)
+        min_indices = choice(class_idxs[minority_class_idx], size=min_samples, replace=bootstrap)
+        indices = np.hstack((min_indices, maj_indices))
+    elif bootstrap:
         indices = random_state.randint(0, n_population, n_samples)
     else:
         indices = sample_without_replacement(n_population, n_samples,
@@ -43,27 +59,28 @@ def _generate_indices(random_state, bootstrap, n_population, n_samples,
 
     return indices
 
+
 def _generate_bagging_indices(random_state, bootstrap_features,
                               bootstrap_samples, n_features, n_samples,
-                              max_features, max_samples, stratify, sample_imbalance, y):
+                              max_features, max_samples, sample_imbalance, y):
     """Randomly draw feature and sample indices."""
+    if sample_imbalance is not None and y is None:
+        raise ValueError('y cannot be None if sample_imbalance is set')
+
     # Get valid random state
     random_state = check_random_state(random_state)
-
-    #TODO - do some checks here to figure out how max_samples is effected by sample_imbalance
-    #and then redo the calc for max_samples to make sure it adheres to the sample_imbalance
-    #elegantly
 
     # Draw indices
     feature_indices = _generate_indices(random_state, bootstrap_features,
                                         n_features, max_features)
     sample_indices = _generate_indices(random_state, bootstrap_samples,
-                                       n_samples, max_samples)
+                                       n_samples, max_samples,
+                                       sample_imbalance=sample_imbalance, y=y)
 
     return feature_indices, sample_indices
 
 
-def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_weight, stratify,
+def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_weight,
                                         sample_imbalance, seeds, total_n_estimators, verbose):
     """Private function used to build a batch of estimators within a job."""
     # Retrieve settings
@@ -97,7 +114,7 @@ def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_wei
                                                       bootstrap, n_features,
                                                       n_samples, max_features,
                                                       max_samples,
-                                                      stratify, sample_imbalance, y)
+                                                      sample_imbalance, y)
 
         # Draw samples, using sample weights, and then fit
         if support_sample_weight:
@@ -132,11 +149,12 @@ class BlaggingClassifier(BaggingClassifier):
 
     Parameters
     ----------
-    stratify : optional, default = False
-        Will choose from the two classes the same amount as their natural imbalance
-
     sample_imbalance : optional, default = 1.0
         Number from 1.0 to 0.01.  Represents n_minority_class / n_majority_class in each Bag
+        If None then there is no balanced downsampling
+
+    #TODO - create a parameter here for repeated random sub-sampling instead - ie, go through every
+    majority class once... figure out weighting for base_estimators based on unlabeled ratios, etc.
     """
     def __init__(self,
                  base_estimator=None,
@@ -145,7 +163,6 @@ class BlaggingClassifier(BaggingClassifier):
                  max_features=1.0,
                  bootstrap=True,
                  bootstrap_features=False,
-                 stratify=False,
                  sample_imbalance=1.0,
                  oob_score=False,
                  warm_start=False,
@@ -153,7 +170,6 @@ class BlaggingClassifier(BaggingClassifier):
                  random_state=None,
                  verbose=0):
 
-        self.stratify = stratify
         self.sample_imbalance = sample_imbalance
 
         super(BaggingClassifier, self).__init__(
@@ -209,9 +225,14 @@ class BlaggingClassifier(BaggingClassifier):
         n_samples, self.n_features_ = X.shape
         self._n_samples = n_samples
         y = self._validate_y(y)
+        if not np.array_equal(self.classes_, [0, 1]):
+            raise ValueError("y must be binary for blagging at this time")
 
         # Check parameters
         self._validate_estimator()
+
+        if self.sample_imbalance <= 0.0 or self.sample_imbalance > 1.0:
+            raise ValueError("sample_imbalance must not be <= 0.0 or > 1.0")
 
         if max_depth is not None:
             self.base_estimator_.max_depth = max_depth
@@ -289,6 +310,7 @@ class BlaggingClassifier(BaggingClassifier):
                 X,
                 y,
                 sample_weight,
+                self.sample_imbalance,
                 seeds[starts[i]:starts[i + 1]],
                 total_n_estimators,
                 verbose=self.verbose)
@@ -309,7 +331,7 @@ if __name__ == "__main__":
     from sklearn.datasets import load_breast_cancer
     X, y = load_breast_cancer(return_X_y=True)
     from sklearn.ensemble import RandomForestClassifier
-    clf = BaggingClassifier(RandomForestClassifier())
+    clf = BlaggingClassifier(RandomForestClassifier(), n_estimators=20)
     #with BaggingTransformedIntoBalancedSampler():
     clf.fit(X, y)
 
