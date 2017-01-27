@@ -28,7 +28,7 @@ MAX_INT = np.iinfo(np.int32).max
 def _generate_class_indexes(y):
     return [np.where(y==c)[0] for c in np.unique(y)]
 
-def _generate_indices(random_state, bootstrap, n_population, n_samples,
+def _generate_indices(random_state, bootstrap, n_population, n_samples, verbose,
                       sample_imbalance=None, y=None):
     """Draw randomly sampled indices."""
 
@@ -50,6 +50,8 @@ def _generate_indices(random_state, bootstrap, n_population, n_samples,
             min_samples = max(min_samples - math.floor(excess / 2.0), 1)
         maj_indices = choice(class_idxs[majority_class_idx], size=maj_samples, replace=bootstrap)
         min_indices = choice(class_idxs[minority_class_idx], size=min_samples, replace=bootstrap)
+        if (verbose > 0):
+            print("majority_class_smaples: {} minority_class_samples: {} for bag".format(maj_samples, min_samples))
         indices = np.hstack((min_indices, maj_indices))
     elif bootstrap:
         indices = random_state.randint(0, n_population, n_samples)
@@ -62,7 +64,7 @@ def _generate_indices(random_state, bootstrap, n_population, n_samples,
 
 def _generate_bagging_indices(random_state, bootstrap_features,
                               bootstrap_samples, n_features, n_samples,
-                              max_features, max_samples, sample_imbalance, y):
+                              max_features, max_samples, sample_imbalance, y, verbose):
     """Randomly draw feature and sample indices."""
     if sample_imbalance is not None and y is None:
         raise ValueError('y cannot be None if sample_imbalance is set')
@@ -72,19 +74,18 @@ def _generate_bagging_indices(random_state, bootstrap_features,
 
     # Draw indices
     feature_indices = _generate_indices(random_state, bootstrap_features,
-                                        n_features, max_features)
+                                        n_features, max_features, verbose)
     sample_indices = _generate_indices(random_state, bootstrap_samples,
-                                       n_samples, max_samples,
+                                       n_samples, max_samples, verbose,
                                        sample_imbalance=sample_imbalance, y=y)
 
     return feature_indices, sample_indices
 
 
-def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_weight,
+def _parallel_build_estimators_balanced(job_number, n_estimators, ensemble, X, y, sample_weight,
                                         sample_imbalance, seeds, total_n_estimators, verbose):
     """Private function used to build a batch of estimators within a job."""
     # Retrieve settings
-    print("RIGHT CALL!!!")
     n_samples, n_features = X.shape
     max_features = ensemble._max_features
     max_samples = ensemble._max_samples
@@ -101,8 +102,8 @@ def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_wei
 
     for i in range(n_estimators):
         if verbose > 1:
-            print("Building estimator %d of %d for this parallel run (total %d)..." %
-                  (i + 1, n_estimators, total_n_estimators))
+            print("Job: %d - Building estimator %d of %d for this parallel run (total %d)..." %
+                  (job_number, i + 1, n_estimators, total_n_estimators))
 
         random_state = np.random.RandomState(seeds[i])
         estimator = ensemble._make_estimator(append=False,
@@ -114,7 +115,7 @@ def _parallel_build_estimators_balanced(n_estimators, ensemble, X, y, sample_wei
                                                       bootstrap, n_features,
                                                       n_samples, max_features,
                                                       max_samples,
-                                                      sample_imbalance, y)
+                                                      sample_imbalance, y, verbose)
 
         # Draw samples, using sample weights, and then fit
         if support_sample_weight:
@@ -304,7 +305,7 @@ class BlaggingClassifier(BaggingClassifier):
         self._seeds = seeds
 
         all_results = Parallel(n_jobs=n_jobs, verbose=self.verbose)(
-            delayed(_parallel_build_estimators_balanced)(
+            delayed(_parallel_build_estimators_balanced)(i,
                 n_estimators[i],
                 self,
                 X,
