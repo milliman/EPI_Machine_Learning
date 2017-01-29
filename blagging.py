@@ -25,7 +25,7 @@ __all__ = ["BlaggingClassifier"]
 
 MAX_INT = np.iinfo(np.int32).max
 
-def _generate_class_indexes(y):
+def _generate_class_indices(y):
     return [np.where(y==c)[0] for c in np.unique(y)]
 
 def _generate_indices(random_state, bootstrap, n_population, n_samples, verbose,
@@ -34,7 +34,7 @@ def _generate_indices(random_state, bootstrap, n_population, n_samples, verbose,
 
     #Find how many samples to take
     if sample_imbalance is not None:
-        class_idxs = _generate_class_indexes(y)
+        class_idxs = _generate_class_indices(y)
         class_len = [len(class_idx) for class_idx in class_idxs]
         minority_class_idx = np.argmin(class_len)
         majority_class_idx = np.argmax(class_len)
