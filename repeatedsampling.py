@@ -7,25 +7,15 @@ Created on Sun Jan 29 00:09:12 2017
 """
 
 
-from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils import check_random_state
-
-import numbers
-import itertools
-from warnings import warn
 import numpy as np
 import math
 
-from sklearn.externals.joblib import Parallel, delayed
-from sklearn.ensemble import BaggingClassifier
-from sklearn.utils.validation import has_fit_parameter
-from sklearn.utils.fixes import bincount
-from sklearn.utils import indices_to_mask
+from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin, clone
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
-from sklearn.ensemble.base import _partition_estimators
-from sklearn.utils.validation import check_X_y
-from sklearn.utils.random import sample_without_replacement, choice
+from sklearn.externals.joblib import Parallel, delayed
+from sklearn.utils.fixes import parallel_helper
+from sklearn.utils.random import choice
 
 __all__ = ["RepeatedRandomSubSampler"]
 
@@ -33,7 +23,7 @@ def _generate_class_indices(y):
     """ Generate all the indices of each class in ascending order"""
     return [np.where(y==c)[0] for c in np.unique(y)]
 
-def _generate_repeated_sample_indices(random_state, sample_imbalance, y):
+def _generate_repeated_sample_indices(random_state, sample_imbalance, y, verbose):
     """Draw randomly repeated samples, return an array of arrays of indeces to train models on
     along with a last sample array as the last one may not be the same size as the others.
     """
@@ -54,8 +44,15 @@ def _generate_repeated_sample_indices(random_state, sample_imbalance, y):
     min_indices = class_idxs[minority_class_idx]
     samples = np.hstack((maj_samples, np.tile(min_indices, (estimators-1, 1))))
     last_sample = np.hstack((last_maj_sample, min_indices))
+    if verbose > 0:
+        print("generating {} samples of indices to use to train multiple estimators, \
+              sized {} elements with last being {} elements".format(
+                      len(samples) + 1, len(samples[0]), len(last_sample)))
     return samples, last_sample
-    
+
+def _parallel_fit_base_estimator(estimator, X, y):
+    estimator.fit(X, y)
+    return estimator
 
 class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     """
@@ -66,15 +63,23 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
     and error checking
     """
 
-    def __init__(self, base_estimator=None, sample_imbalance=1.0, random_state=None, n_jobs=1, verbose=0):
+    def __init__(self, base_estimator=None, sample_imbalance=1.0, voting='hard',
+                 random_state=None, n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
         """
         sample_imbalance : optional, default = 1.0
             Number from 1.0 to 0.01.  Represents n_minority_class / n_majority_class in each Bag
+            
+        voting : str, {'hard', 'soft'} (default = 'hard')
+            If 'hard', uses predicted class labels for majroity rule voting.
+            Else if 'soft', predicts the class label based on the argmax of the of the predicted probabilities,
+            which is recommended for well calibrated classifiers
         """
         self.base_estimator = base_estimator
         self.sample_imbalance = sample_imbalance
+        self.voting = voting
         self.random_state = random_state
         self.n_jobs = n_jobs
+        self.pre_dispatch = pre_dispatch
         self.verbose = verbose
 
     def fit(self, X, y):
@@ -89,6 +94,8 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         # Check to see base_estimator exists
         if self.base_estimator is None:
             raise ValueError("base_estimator must be defined before running fit")
+            
+        base_estimator = clone(self.base_estimator)
 
         # Store the classes seen during fit
         self.n_features_ = X.shape[1]
@@ -96,6 +103,17 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         self.y_ = y
 
         #TODO - generate samples and train all classifiers, store them, do it all in parallel
+        samples, last_sample = _generate_repeated_sample_indices(random_state, self.sample_imbalance, y, self.verbose)
+        samples_indices = list(samples)
+        samples_indices.extend([last_sample])
+        self.samples_indices_ = samples_indices
+                
+        parallel = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)
+        out = parallel(delayed(_parallel_fit_base_estimator)(clone(base_estimator), X[indices,:], y[indices])
+                       for indices in samples_indices)
+        
+        print(out)
+        self.estimators_ = out
 
         # Return the classifier
         return self
@@ -114,9 +132,16 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
                              "input n_features is {1}."
                              "".format(self.n_features_, X.shape[1]))
 
-        #TODO - do we want to just do pure voting here? Go through self.estimators_ and make a voting / average pred?
-        #pr = self.base_estimator.predict_proba(X)[:, 1]
-        return #xxx
+        if self.voting == 'soft':
+            maj = np.argmax(self.predict_proba(X), axis=1)
+        elif self.voting == 'hard':
+            predictions = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)(
+            delayed(parallel_helper)(estimator, 'predict', X) for estimator in self.estimators_)
+            predictions = np.asarray(predictions)
+            print(predictions)
+            maj = np.apply_along_axis(lambda x: np.argmax(np.bincount(x)), axis=0, arr=predictions)
+        
+        return maj
 
     def predict_proba(self, X):
         check_is_fitted(self, 'estimators_')
@@ -131,10 +156,19 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
                              "".format(self.n_features_, X.shape[1]))
 
         if hasattr(self.base_estimator, "predict_proba"):
-            probas = [est.predict_proba(X) for est in self.estimators_]
-            #TODO - figure out how to take the mean of every probability column among every estimator
-            #proba = np.mean(probas, axis=1)
+            predictions = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)(
+                    delayed(parallel_helper)(estimator, 'predict_proba', X) for estimator in self.estimators_)
+            predictions = np.array(predictions)        
+            
+            avg = np.average(predictions, axis=0)
         else:
             raise AttributeError("predict_prob doesn't exist for: {}".format(self.base_estimator))
 
-        return proba
+        return avg
+
+if __name__ == "__main__":
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.datasets import make_classification
+    X, y = make_classification(n_samples=100, weights=[0.8, 0.2])
+    sub = RepeatedRandomSubSampler(RandomForestClassifier(n_estimators=50), voting='hard', n_jobs=-1, verbose=1)
+    sub.fit(X, y)
