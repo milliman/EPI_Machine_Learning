@@ -37,7 +37,7 @@ def _generate_repeated_sample_indices(random_state, sample_imbalance, y, verbose
     estimators = math.ceil(tot_maj_samples / maj_samples_per_sample)
     maj_indices = class_idxs[majority_class_idx]
     # maj_samples is a table of estimator-1 rows by maj_samples_per_sample columns
-    maj_samples = choice(maj_indices, size=(estimators-1, maj_samples_per_sample), 
+    maj_samples = choice(maj_indices, size=(estimators-1, maj_samples_per_sample),
                          replace=False, random_state=random_state)
     # last_maj_sample is a different length than each row of maj_samples to get every examle into a sample
     last_maj_sample = np.setxor1d(maj_samples, maj_indices)
@@ -68,7 +68,7 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         """
         sample_imbalance : optional, default = 1.0
             Number from 1.0 to 0.01.  Represents n_minority_class / n_majority_class in each Bag
-            
+
         voting : str, {'hard', 'soft'} (default = 'hard')
             If 'hard', uses predicted class labels for majroity rule voting.
             Else if 'soft', predicts the class label based on the argmax of the of the predicted probabilities,
@@ -90,11 +90,11 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         self.classes_ = np.unique(y)
         if not np.array_equal(self.classes_, [0, 1]):
             raise ValueError("y must be binary for RepeatedRandomSubSampler at this time")
-            
+
         # Check to see base_estimator exists
         if self.base_estimator is None:
             raise ValueError("base_estimator must be defined before running fit")
-            
+
         base_estimator = clone(self.base_estimator)
 
         # Store the classes seen during fit
@@ -102,18 +102,16 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         self.X_ = X
         self.y_ = y
 
-        #TODO - generate samples and train all classifiers, store them, do it all in parallel
         samples, last_sample = _generate_repeated_sample_indices(random_state, self.sample_imbalance, y, self.verbose)
         samples_indices = list(samples)
         samples_indices.extend([last_sample])
         self.samples_indices_ = samples_indices
-                
+
         parallel = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)
-        out = parallel(delayed(_parallel_fit_base_estimator)(clone(base_estimator), X[indices,:], y[indices])
+        estimators = parallel(delayed(_parallel_fit_base_estimator)(clone(base_estimator), X[indices,:], y[indices])
                        for indices in samples_indices)
-        
-        print(out)
-        self.estimators_ = out
+
+        self.estimators_ = estimators
 
         # Return the classifier
         return self
@@ -138,9 +136,8 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
             predictions = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)(
             delayed(parallel_helper)(estimator, 'predict', X) for estimator in self.estimators_)
             predictions = np.asarray(predictions)
-            print(predictions)
             maj = np.apply_along_axis(lambda x: np.argmax(np.bincount(x)), axis=0, arr=predictions)
-        
+
         return maj
 
     def predict_proba(self, X):
@@ -158,8 +155,8 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         if hasattr(self.base_estimator, "predict_proba"):
             predictions = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)(
                     delayed(parallel_helper)(estimator, 'predict_proba', X) for estimator in self.estimators_)
-            predictions = np.array(predictions)        
-            
+            predictions = np.array(predictions)
+
             avg = np.average(predictions, axis=0)
         else:
             raise AttributeError("predict_prob doesn't exist for: {}".format(self.base_estimator))
