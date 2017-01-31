@@ -42,6 +42,7 @@ class NestedCV():
         """
         X, y, groups = indexable(X, y, groups)
 
+        #TODO - redo this CV logic so that self.random_state is involved
         cv = check_cv(self.cv, y, classifier=is_classifier(self.estimator))
         self.cv_iter_ = list(cv.split(X, y, groups))
         scorer = check_scoring(self.estimator, scoring=self.scoring)

@@ -127,3 +127,11 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
             raise AttributeError("predict_prob doesn't exist for: {}".format(self.base_estimator))
 
         return proba
+
+    @property
+    def feature_importances_(self):
+        check_is_fitted(self, ['classes_'])
+        if hasattr(self.base_estimator, "feature_importances_"):
+            return self.base_estimator.feature_importances_
+        else:
+            raise AttributeError("feature_importances_ doesn't exist for: {}".format(self.base_estimator))

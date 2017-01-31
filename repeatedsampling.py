@@ -163,9 +163,19 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
 
         return avg
 
+    @property
+    def feature_importances_(self):
+        check_is_fitted(self, 'estimators_')
+
+        if hasattr(self.estimators_[0], 'feature_importances_'):
+            all_feature_importances = np.array([est.feature_importances_ for est in self.estimators_])
+            return np.mean(all_feature_importances, axis=0)
+        else:
+            raise AttributeError("feature_importances_ doesn't exist for: {}".format(self.base_estimator))
+
 if __name__ == "__main__":
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.datasets import make_classification
     X, y = make_classification(n_samples=100, weights=[0.8, 0.2])
-    sub = RepeatedRandomSubSampler(RandomForestClassifier(n_estimators=50), voting='hard', n_jobs=-1, verbose=1)
-    sub.fit(X, y)
+    sub = RepeatedRandomSubSampler(RandomForestClassifier(n_estimators=50), voting='hard', n_jobs=1, verbose=1)
+    #sub.fit(X, y)
