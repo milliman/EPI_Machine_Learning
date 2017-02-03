@@ -7,12 +7,14 @@ Created on Sat Jan 14 23:41:21 2017
 
 import numpy as np
 import pandas as pd
+import numbers
 
 from sklearn.model_selection._validation import indexable
 from sklearn.model_selection._split import check_cv
 from sklearn.base import is_classifier, clone
 from sklearn.metrics.scorer import check_scoring
 from sklearn.externals.joblib import Parallel, delayed
+from sklearn.utils import check_random_state
 
 from jeffsearchcv import _fit_and_score_with_extra_data
 from frankenscorer import extract_score_grid
@@ -25,22 +27,34 @@ class NestedCV():
     """ Class to perform validation and keep all the models
     """
 
-    def __init__(self, estimator, scoring=None, cv=None, fit_params=None, random_state=None):
+    def __init__(self, estimator, scoring=None, cv=None, fit_params=None, random_state=None, use_same_random_state=True):
         """
         Parameters
         ----------
         estimator : Should usually be a grid / random parameter searcher
+        use_same_random_state : if true, will make sure each base estimator gets passed the same ranomd state.
+            If this is true, then random_state must be an Integer or Integral
         """
         self.estimator = estimator
         self.scoring = scoring
         self.cv = cv
         self.fit_params = fit_params
         self.random_state = random_state
+        self.use_same_random_state = use_same_random_state
 
     def score(self, X, y=None, groups=None, n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
         """ Will score the estimator and score according to self.cv
         """
         X, y, groups = indexable(X, y, groups)
+        if not isinstance(self.random_state, (numbers.Integral, np.integer)) and self.use_same_random_state:
+            raise ValueError("If use_same_randome_state, the random state passed in must be an Integer")
+        def clone_estimator():
+            """Clone the estimator and put in the correct random state for the nested cross validation
+            """
+            estimator = clone(self.estimator)
+            if self.use_same_random_state:
+                estimator.set_params(random_state=self.random_state)
+            return estimator
 
         #TODO - redo this CV logic so that self.random_state is involved
         cv = check_cv(self.cv, y, classifier=is_classifier(self.estimator))
@@ -50,7 +64,7 @@ class NestedCV():
         # independent, and that it is pickle-able.
         parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
                             pre_dispatch=pre_dispatch)
-        scores = parallel(delayed(_fit_and_score_with_extra_data)(clone(self.estimator), X, y, scorer,
+        scores = parallel(delayed(_fit_and_score_with_extra_data)(clone_estimator(), X, y, scorer,
                                                   train, test, verbose, None,
                                                   self.fit_params, return_train_score=True,
                                                   return_times=True, return_estimator=True)

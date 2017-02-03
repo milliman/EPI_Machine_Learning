@@ -18,7 +18,7 @@ class LoadCreon:
         X = X.drop(list(X_sums[X_sums == 0].index), axis=1)
         X = X.drop(['unlabel_flag','true_pos_flag','true_neg_flag','MemberID','epi_related_cond',
                           'epi_related_cond_subgrp','h_rank','pert_flag','mmos','elastase_flag','medical_claim_count',
-                          'rx_claim_count'], axis=1)
+                          'rx_claim_count','CPT_FLAG44_Sum'], axis=1)
         # set up class from the flags in the data with
         # -1 = unlabeled, 0 = true_negative, 1 = true_positive
         y = (data.unlabel_flag * -1) + data.true_pos_flag
