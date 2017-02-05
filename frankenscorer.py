@@ -108,6 +108,10 @@ class FrankenScorer():
         y_pred = estimator.predict(X)
         y_prob = estimator.predict_proba(X)
 
+        pu_score_num = pu_score(y_true, y_pred)
+        assumed_f1beta10 = assumed_metric(y_true, y_pred, fbeta_score, beta=10)
+        pu_mix_assumed_f1beta10 = (assumed_f1beta10 * 100.0) + pu_score_num
+
         data = {'labeled_acc' : labeled_metric(y_true, y_pred, accuracy_score),
             'labeled_prec' : labeled_metric(y_true, y_pred, precision_score),
             'labeled_recall' : labeled_metric(y_true, y_pred, recall_score),
@@ -122,9 +126,10 @@ class FrankenScorer():
             'assumed_brier' : assumed_metric(y_true, y_prob, brier_score_loss),
             'assumed_brier_neg' : assumed_metric(y_true, y_prob, brier_score_partial_loss, label=0),
             'assumed_f1' : assumed_metric(y_true, y_pred, f1_score),
-            'assumed_f1beta10' : assumed_metric(y_true, y_pred, fbeta_score, beta=10),
+            'assumed_f1beta10' : assumed_f1beta10,
             'confusion_matrix_un' : assumed_metric(y_true, y_pred, confusion_matrix),
-            'pu_score' : pu_score(y_true, y_pred),
+            'pu_score' : pu_score_num,
+            'pu_mix_assumed_f1beta10' : pu_mix_assumed_f1beta10,
             }
 
         ret = data[self.decision_score]
