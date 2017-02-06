@@ -48,11 +48,11 @@ def _generate_indices(random_state, bootstrap, n_population, n_samples, verbose,
             excess = maj_samples + min_samples - n_samples
             maj_samples = max(maj_samples - math.ceil(excess / 2.0), 1)
             min_samples = max(min_samples - math.floor(excess / 2.0), 1)
-        maj_indices = choice(class_idxs[majority_class_idx], size=maj_samples, replace=bootstrap)
-        min_indices = choice(class_idxs[minority_class_idx], size=min_samples, replace=bootstrap)
+        maj_indices = choice(class_idxs[majority_class_idx], size=maj_samples, replace=bootstrap, random_state=random_state)
+        min_indices = choice(class_idxs[minority_class_idx], size=min_samples, replace=bootstrap, random_state=random_state)
         if (verbose > 0):
             print("majority_class_smaples: {} minority_class_samples: {} for bag".format(maj_samples, min_samples))
-        indices = np.hstack((min_indices, maj_indices))
+        indices = np.hstack((maj_indices, min_indices))
     elif bootstrap:
         indices = random_state.randint(0, n_population, n_samples)
     else:

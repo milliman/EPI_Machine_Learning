@@ -80,7 +80,7 @@ class NestedCV():
 
 def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=None,
                              how='max', n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
-    """ Rerun a nested CV gred / random hyper param run but very efficiently by using the stored scoring data
+    """ Rerun a nested CV grid / random hyper param run but very efficiently by using the stored scoring data
     from a previous run
 
     Parameters
@@ -115,6 +115,25 @@ def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=Non
     scores = parallel(delayed(_fit_and_score_with_extra_data)(estimator, X, y, check_scoring(estimator, new_scoring), train, test,
                       verbose, None, nested.fit_params, return_train_score=True, return_times=True)
         for (train, test), estimator in zip(nested.cv_iter_, new_estimators))
+    (nested.train_score_datas_, nested.train_scores_, nested.test_score_datas_, nested.test_scores_,
+                 nested.fit_times_, nested.score_times_) = zip(*scores)
+    return nested
+
+def rerun_nested_for_estimator(nested: NestedCV, estimator, X, y=None, groups=None,
+                               n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
+    """ Rerun a nested CV grid / random hyper param run but for just the estimator passed in to get an estimation
+    of scores - this is basically a fix for the old way of having different random states on the outer folds.
+    It should have been same models in every outer fold but ended up being different so estimates are off
+
+    Returns
+    -------
+    Messes up internal nested state, returns it (but estimators are still dug in there in inner loops)
+    """
+    parallel = Parallel(n_jobs=n_jobs, verbose=verbose, pre_dispatch=pre_dispatch)
+    scores = parallel(delayed(_fit_and_score_with_extra_data)(clone(estimator), X, y,
+                              check_scoring(estimator, nested.scoring), train, test,
+                      verbose, None, nested.fit_params, return_train_score=True, return_times=True)
+        for train, test in nested.cv_iter_)
     (nested.train_score_datas_, nested.train_scores_, nested.test_score_datas_, nested.test_scores_,
                  nested.fit_times_, nested.score_times_) = zip(*scores)
     return nested
