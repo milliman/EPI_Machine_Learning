@@ -79,7 +79,7 @@ class NestedCV():
         return self.test_scores_
 
 def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=None,
-                             how='max', n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
+                             how='max', n_jobs=1, verbose=0, pre_dispatch='2*n_jobs', return_estimators=False):
     """ Rerun a nested CV grid / random hyper param run but very efficiently by using the stored scoring data
     from a previous run
 
@@ -89,9 +89,10 @@ def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=Non
     score : A string of a score calculated during the scoring run of nested
     how : 'max' or 'min', optional, default='max'
         will look for the min or max of the score provided
+    return_estimators : if true return a tuple with new estimators in addition to nested cross, optional, default=False
     Returns
     -------
-    nested with new values
+    nested with new values, (optional, new_estimators)
     """
     sub_scores = [extract_score_grid(searcher) for searcher in nested.estimators_]
     sub_scores_means = [sub_score[[c for c in sub_score.columns if 'test' in c and 'mean' in c]] \
@@ -107,17 +108,25 @@ def rerun_nested_for_scoring(nested: NestedCV, score: str, X, y=None, groups=Non
     nested.best_params_ = params
     nested.best_idxs_ = idxs
     new_estimators = [clone(estimator.estimator).set_params(**param) for param, estimator in zip(params, nested.estimators_)]
+    #set the random state so can reproduce results
+    for est in new_estimators:
+        est.set_params(random_state=nested.random_state)
     if hasattr(nested.scoring, 'change_decision_score'):
         new_scoring = nested.scoring.change_decision_score(score)
     else:
         new_scoring = nested.scoring
     parallel = Parallel(n_jobs=n_jobs, verbose=verbose, pre_dispatch=pre_dispatch)
     scores = parallel(delayed(_fit_and_score_with_extra_data)(estimator, X, y, check_scoring(estimator, new_scoring), train, test,
-                      verbose, None, nested.fit_params, return_train_score=True, return_times=True)
+                      verbose, None, nested.fit_params, return_train_score=True, return_times=True, return_estimator=return_estimators)
         for (train, test), estimator in zip(nested.cv_iter_, new_estimators))
-    (nested.train_score_datas_, nested.train_scores_, nested.test_score_datas_, nested.test_scores_,
-                 nested.fit_times_, nested.score_times_) = zip(*scores)
-    return nested
+    if return_estimators:
+        (nested.train_score_datas_, nested.train_scores_, nested.test_score_datas_, nested.test_scores_,
+         nested.fit_times_, nested.score_times_, new_estimators) = zip(*scores)
+        return nested, new_estimators
+    else:
+        (nested.train_score_datas_, nested.train_scores_, nested.test_score_datas_, nested.test_scores_,
+         nested.fit_times_, nested.score_times_) = zip(*scores)
+        return nested
 
 def rerun_nested_for_estimator(nested: NestedCV, estimator, X, y=None, groups=None,
                                n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
