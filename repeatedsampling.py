@@ -45,8 +45,8 @@ def _generate_repeated_sample_indices(random_state, sample_imbalance, y, verbose
     samples = np.hstack((maj_samples, np.tile(min_indices, (estimators-1, 1))))
     last_sample = np.hstack((last_maj_sample, min_indices))
     if verbose > 0:
-        print("generating {} samples of indices to use to train multiple estimators, \
-              sized {} elements with last being {} elements".format(
+        print("generating {} samples of indices to use to train multiple estimators, "
+              "sized {} elements with last being {} elements".format(
                       len(samples) + 1, len(samples[0]), len(last_sample)))
     return samples, last_sample
 
