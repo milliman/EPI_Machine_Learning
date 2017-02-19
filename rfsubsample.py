@@ -17,6 +17,7 @@ from sklearn.utils import check_random_state, check_array, compute_sample_weight
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree._tree import DTYPE, DOUBLE
 from sklearn.exceptions import DataConversionWarning
+from sklearn.utils.random import choice
 
 __all__ = ["RandomForestSubsample"]
 
@@ -32,15 +33,22 @@ def _generate_sample_indices(random_state, y, target_imbalance_ratio, verbose=0)
     class_idxs = _generate_class_indices(y)
     class_len = [len(class_idx) for class_idx in class_idxs]
     minority_class_idx = np.argmin(class_len)
+    majority_class_idx = np.argmax(class_len)
     min_samples = class_len[minority_class_idx]
     maj_samples = int(min_samples / target_imbalance_ratio)
     n_samples = min_samples + maj_samples
-    if verbose > 0:
+    if verbose > 1:
         print("len(y):{} target_imbalance_ratio:{} minorities:{} majorities:{} "
               "n_samples:{}".format(len(y), target_imbalance_ratio, min_samples,
                          maj_samples, n_samples))
 
-    sample_indices = random_instance.randint(0, len(y), n_samples)
+    maj_indices = choice(class_idxs[majority_class_idx], size=maj_samples, replace=False, random_state=random_instance)
+    min_indices = class_idxs[minority_class_idx]
+    indices_to_choose_from = np.hstack((min_indices, maj_indices))
+    if verbose > 99:
+        print("possible indicies to choose from: {}".format(indices_to_choose_from))
+
+    sample_indices = choice(indices_to_choose_from, size=n_samples, replace=True, random_state=random_instance)
     if verbose > 99:
         print("chosen indicies: {}".format(sample_indices))
 
@@ -254,6 +262,7 @@ class RandomForestSubsample(RandomForestClassifier):
 
 if __name__ == "__main__":
     from sklearn.datasets import make_classification
+    np.set_printoptions(threshold=np.nan)
     X, y = make_classification(n_samples=100, weights=[0.8, 0.2])
     sub = RandomForestSubsample(verbose=100)
     sub.fit(X, y)
