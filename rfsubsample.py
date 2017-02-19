@@ -86,6 +86,11 @@ def _parallel_build_trees(tree, forest, X, y, sample_weight, tree_idx, n_trees,
     return tree
 
 class RandomForestSubsample(RandomForestClassifier):
+    """ This is a random forest where every bootstrapped sample used for different trees in the forest is
+    chosen from a subset of the data where a "target_imbalance_ratio" (number_minority_class / number_majority_class)
+    Is between 0.1 and 1.0.  Once a more "balanced" subsample is chosen for a tree, a bootstrap of that population is
+    then chosen to train that specific tree.
+    """
 
     def __init__(self,
                  n_estimators=10,
