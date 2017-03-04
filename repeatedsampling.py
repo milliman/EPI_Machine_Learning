@@ -152,6 +152,8 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
                              "input n_features is {1}."
                              "".format(self.n_features_, X.shape[1]))
 
+        #TODO - consider checking self.voting here.  If 'soft' then take average probability. If 'hard' may want to
+        #recalculate the probabilities based on what % of ensemble classified >= 50% for positives.
         if hasattr(self.base_estimator, "predict_proba"):
             predictions = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)(
                     delayed(parallel_helper)(estimator, 'predict_proba', X) for estimator in self.estimators_)

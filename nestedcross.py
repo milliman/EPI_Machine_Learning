@@ -32,7 +32,7 @@ class NestedCV():
         Parameters
         ----------
         estimator : Should usually be a grid / random parameter searcher
-        use_same_random_state : if true, will make sure each base estimator gets passed the same ranomd state.
+        use_same_random_state : if true, will make sure each base estimator gets passed the same random state.
             If this is true, then random_state must be an Integer or Integral
         """
         self.estimator = estimator
@@ -73,8 +73,16 @@ class NestedCV():
         (self.train_score_datas_, self.train_scores_, self.test_score_datas_, self.test_scores_,
                  self.fit_times_, self.score_times_, self.estimators_) = zip(*scores)
 
-        self.best_params_ = [estimator.best_params_ for estimator in self.estimators_]
-        self.best_idxs_ = [estimator.best_index_ for estimator in self.estimators_]
+        if hasattr(self.estimator, 'best_params_'):
+            self.best_params_ = [estimator.best_params_ for estimator in self.estimators_]
+        else:
+            print("WARN: NestedCV.best_params_ set to None")
+            self.best_params_ = None
+        if hasattr(self.estimator, 'best_index_'):
+            self.best_idxs_ = [estimator.best_index_ for estimator in self.estimators_]
+        else:
+            print("WARN: NestedCV.best_idxs_ set to None")
+            self.best_idxs_ = None
 
         return self.test_scores_
 
