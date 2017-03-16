@@ -37,6 +37,14 @@ def pu_score(y_true, y_pred):
 
    return recall * recall / pr_true
 
+def pu_mix_assumed_f1beta10(y_true, y_pred):
+    """
+    take f1beta10 socre, multiply by 100, and add the pu_score
+    """
+    pu_score_num = pu_score(y_true, y_pred)
+    assumed_f1beta10 = assumed_metric(y_true, y_pred, fbeta_score, beta=10)
+    return (assumed_f1beta10 * 100.0) + pu_score_num
+
 def brier_score_partial_loss(y_true, y_prob, sample_weight=None, label=None):
     """ Compute the partial brier score
 
@@ -169,6 +177,7 @@ def make_assumed_scorer(metric, assume_unlabeled=0,
 
 # Scorers for model selection
 pu_scorer = make_scorer(pu_score)
+pu_mix_assumed_f1beta10_scorer = make_scorer(pu_mix_assumed_f1beta10)
 prior_squared_error_scorer_015 = make_scorer(prior_squared_error, greater_is_better=False, prior=0.015)
 brier_score_labeled_loss_scorer = make_label_scorer(brier_score_loss, greater_is_better=False, needs_proba=True)
 brier_score_assumed_loss_scorer = make_assumed_scorer(brier_score_loss, greater_is_better=False, needs_proba=True)

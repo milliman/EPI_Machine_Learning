@@ -135,3 +135,11 @@ class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
             return self.base_estimator.feature_importances_
         else:
             raise AttributeError("feature_importances_ doesn't exist for: {}".format(self.base_estimator))
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, ['classes_'])
+        if hasattr(self.base_estimator, "coef_"):
+            return self.base_estimator.coef_
+        else:
+            raise AttributeError("coef_ doesn't exist for: {}".format(self.base_estimator))

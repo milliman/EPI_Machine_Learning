@@ -54,6 +54,10 @@ def _parallel_fit_base_estimator(estimator, X, y):
     estimator.fit(X, y)
     return estimator
 
+def check_voting(estimator):
+    if estimator.voting not in ('soft', 'hard', 'thresh'):
+        raise ValueError("{}.voting must be in ('soft', 'hard', or 'thresh') NOT {}".format(estimator, estimator.voting))
+
 class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     """
     This will wrap classifiers to be used with massively unbalanced data and sample and train base estimators
@@ -63,20 +67,27 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
     and error checking
     """
 
-    def __init__(self, base_estimator=None, sample_imbalance=1.0, voting='hard',
+    def __init__(self, base_estimator=None, sample_imbalance=1.0, voting='hard', binary_thresh=0.5,
                  random_state=None, n_jobs=1, verbose=0, pre_dispatch='2*n_jobs'):
         """
         sample_imbalance : optional, default = 1.0
             Number from 1.0 to 0.01.  Represents n_minority_class / n_majority_class in each Bag
 
-        voting : str, {'hard', 'soft'} (default = 'hard')
+        voting : str, {'hard', 'soft', 'thresh'} (default = 'hard')
             If 'hard', uses predicted class labels for majroity rule voting.
-            Else if 'soft', predicts the class label based on the argmax of the of the predicted probabilities,
-            which is recommended for well calibrated classifiers
+            If 'soft', predicts the class label based on the argmax of the of the predicted probabilities,
+                which is recommended for well calibrated classifiers
+            If 'thresh', use binary_thresh to predict if class 1, if not >= binary_thresh then class 0.  'thresh' is
+                invalid if not a binary classifier
+
+        binary_thresh : optional, default = 0.5
+            When voting = 'thresh', then use this to choose class 1 (of a binary classifier) when probability of class
+            1 >= binary_thresh
         """
         self.base_estimator = base_estimator
         self.sample_imbalance = sample_imbalance
         self.voting = voting
+        self.binary_thresh = binary_thresh
         self.random_state = random_state
         self.n_jobs = n_jobs
         self.pre_dispatch = pre_dispatch
@@ -117,9 +128,9 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
         return self
 
     def predict(self, X):
-
         # Check is fit had been called
-        check_is_fitted(self, ['estimators_'])
+        check_is_fitted(self, ['estimators_', 'classes_'])
+        check_voting(self)
 
         # Input validation
         X = check_array(X, accept_sparse=['csr', 'csc'])
@@ -137,11 +148,17 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
             delayed(parallel_helper)(estimator, 'predict', X) for estimator in self.estimators_)
             predictions = np.asarray(predictions)
             maj = np.apply_along_axis(lambda x: np.argmax(np.bincount(x)), axis=0, arr=predictions)
+        elif self.voting == 'thresh':
+            if not np.array_equal(self.classes_, [0, 1]):
+                raise ValueError("this classifier must be binary to support self.voting == 'thresh'")
+            probas = self.predict_proba(X)[:, -1]
+            maj = (probas >= self.binary_thresh).astype(int)
 
         return maj
 
     def predict_proba(self, X):
         check_is_fitted(self, 'estimators_')
+        check_voting(self)
 
         # Check data
         X = check_array(X, accept_sparse=['csr', 'csc'])
@@ -152,18 +169,21 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
                              "input n_features is {1}."
                              "".format(self.n_features_, X.shape[1]))
 
-        #TODO - consider checking self.voting here.  If 'soft' then take average probability. If 'hard' may want to
-        #recalculate the probabilities based on what % of ensemble classified >= 50% for positives.
         if hasattr(self.base_estimator, "predict_proba"):
             predictions = Parallel(n_jobs=self.n_jobs, verbose=self.verbose, pre_dispatch=self.pre_dispatch)(
                     delayed(parallel_helper)(estimator, 'predict_proba', X) for estimator in self.estimators_)
             predictions = np.array(predictions)
 
-            avg = np.average(predictions, axis=0)
+            if self.voting in ('soft', 'thresh'):
+                return np.average(predictions, axis=0)
+            elif self.voting == 'hard':
+                #take % of estimators >= 50%
+                maj = np.argmax(predictions, axis=2)
+                sums = np.apply_along_axis(lambda x: np.bincount(x, minlength=len(self.classes_)), axis=0, arr=maj)
+                tots = np.sum(sums, axis=0)
+                return np.transpose(sums / tots)
         else:
             raise AttributeError("predict_prob doesn't exist for: {}".format(self.base_estimator))
-
-        return avg
 
     @property
     def feature_importances_(self):
@@ -178,6 +198,9 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
 if __name__ == "__main__":
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.datasets import make_classification
-    X, y = make_classification(n_samples=100, weights=[0.8, 0.2])
-    sub = RepeatedRandomSubSampler(RandomForestClassifier(n_estimators=50), voting='hard', n_jobs=1, verbose=1)
-    #sub.fit(X, y)
+    X, y = make_classification(n_samples=100, weights=[0.8, 0.2], random_state=100)
+    sub = RepeatedRandomSubSampler(RandomForestClassifier(n_estimators=50), voting='thresh',
+                                   binary_thresh = 0.7, n_jobs=1, verbose=1)
+    sub.fit(X, y)
+
+
