@@ -18,7 +18,7 @@ class TestSemiSuperHelper(unittest.TestCase):
     def setUp(self):
         self.y = np.asarray([1, 1, 1, 0, 0, 0, -1, -1, -1, -1])
         self.X = np.arange(20).reshape([10,2])
-        self.ssh = SemiSupervisedHelper(self.y, random_state=1)
+        self.ssh = SemiSupervisedHelper(self.y, random_state=55)
 
     def test_pn_assume_full(self):
         X, y, X_unused = self.ssh.pn_assume(self.X)
