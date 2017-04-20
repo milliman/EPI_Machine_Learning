@@ -4,7 +4,7 @@ Created on Wed Apr 19 17:52:18 2017
 
 @author: jeffrey.gomberg
 """
-
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import scipy as sp
@@ -48,6 +48,24 @@ class ModelDeepDive():
         self.X_test = X_test
         self.y_test = y_test
 
+    def generate_explanations(self, n_examples=None, random_state=None, num_features=30, num_samples=10000):
+        """ Generate explanations for n_examples
+        Parameters:
+        -----------------
+        n_examples: int, optional, default=None
+            If none generate examples for all in X_test
+        """
+        explainers = {}
+        samples = X_test.sample(n_examples, random_state=random_state) if n_examples is not None else X_test
+        tot = len(samples)
+        print("{%H:%M:%S}: Generating explainers for {} samples".format(datetime.now(), tot))
+        for i, (index, row_series) in enumerate(samples.iterrows()):
+            print("{%H:%M:%S}: Generating model {} of {}".format(datetime.now(), tot))
+            explainer = self.explainer.explain_instance(row_series.values, self.clf.predict_proba,
+                                                        num_features=num_features, num_samples=num_samples)
+            explainers.update(index, explainer)
+        return explainers
+
 
     def exaplin_example_code(self, row):
         exp = self.explainer.explain_instance(row, self.clf.predict_proba, num_features=30, num_samples=10000)
@@ -81,12 +99,32 @@ def create_explainer(X_train, y_train):
                                                   discretize_continuous=True, discretizer='entropy')
 
 if __name__ == "__main__":
-#    path = "C:\Data\\010317\membership14_final_0103.txt"
-#    print("Loading {}".format(path))
-#    lc = LoadCreon(path)
-#    print("Done loading")
-#    X_train, X_test, y_train, y_test = train_test_split(lc.X, lc.y, test_size=0.2, random_state=771, stratify=lc.y)
-#    print("Split Data: train_size {}, test_size {}".format(X_train.shape, X_test.shape))
-#    model6 = create_model_6(X_train, y_train)
-#    scores, _ = FrankenScorer()(model6, X_test.values, y_test.values)
+    path = "C:\Data\\010317\membership14_final_0103.txt"
+    print("Loading {}".format(path))
+    try:
+        lc = LoadCreon(path)
+    except FileNotFoundError:
+        #This is for running on a machine not on network that can see the data
+        print("File doesn't exist, generating fake data!")
+        from sklearn.datasets import make_classification
+        X, y = make_classification(n_samples=10000, n_features=200, n_informative=50, n_redundant=100, n_classes=2,
+                                   n_clusters_per_class=3, weights=[0.9], flip_y=0, hypercube=False,
+                                   random_state=101)
+
+        #make this like the unlabeled problem we are solving -change most to unlabeled class == -1
+        rnd_unlabeled = np.random.choice([True, False], size=len(y), replace=True, p=[0.8,0.2])
+        y[rnd_unlabeled] = -1
+        X = pd.DataFrame(X)
+        y = pd.Series(y)
+    else:
+        X = lc.X
+        y = lc.y
+    print("Done loading")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=771, stratify=y)
+    print("Split Data: train_size {}, test_size {}".format(X_train.shape, X_test.shape))
+    model6 = create_model_6(X_train, y_train)
+    scores, _ = FrankenScorer()(model6, X_test.values, y_test.values)
+    #TODO - change expaliner below to be settings from notebook
+    explainer = lime.lime_tabular.LimeTabularExplainer(X_train.values)
+    deep = ModelDeepDive(model6, explainer, X_test, y_test)
     print(scores)
