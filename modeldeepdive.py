@@ -106,7 +106,7 @@ class ModelDeepDive():
         with open(filename, 'wb') as handle:
             pickle.dump(self._explanations, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def import_definitions_from_file(self, filename):
+    def import_explanations_from_file(self, filename):
         with open(filename, 'rb') as handle:
             explanations = pickle.load(handle)
             print("Loaded {} explanations from {}".format(len(explanations), filename))
@@ -114,6 +114,24 @@ class ModelDeepDive():
         print('There are now {} explanations available'.format(len(self._explanations)))
 
     def analyze_features(self, indexes=None):
+        """ Analyze the features given the explanations in self._explanations.
+        Parameters:
+        -----------------------
+        indexes: list-like, optional, default=None
+            Filter all explanations by an index, this should be used to filter what we are analyzing. For example
+            if you wanted to only analyze explanations where y_test was 1, or where predict_prob >= 0.9, you could
+            do that with the indexes parameter. If None, then analyze all explanations
+        Returns:
+        ----------------------------
+        rules_df: DataFrame
+            Takes the rules in the explanation.as_list() and returns the added weights, added absolute value of weights,
+            And the number of explanations that used that specific rule
+        features_df: DataFrame
+            Takes the features that are used in the rules in the explanations (as_map).  Returns the sum of the absolute
+            value of the weights and the number of explanations that used that specific feature
+        """
+        if not self._explanations:
+            raise ValueError("Called analyze_features on ModelDeepDive before explanations are calculated or initialized")
         expl = self._explanations if indexes is None else {k:v for k,v in self._explanations.items() if k in indexes}
         expl_rules = [dict(exp.as_list()) for exp in expl.values()]
         rule_weights = defaultdict(float)
@@ -125,6 +143,10 @@ class ModelDeepDive():
                 rule_abs_weights[f] += abs(expl_rule[f])
                 rule_counts[f] += 1
         rules_df = pd.DataFrame({'weight_sum':rule_weights, 'abs_weight_sum':rule_abs_weights, 'N':rule_counts})
+        rules_df['importance'] = np.sqrt(rules_df.abs_weight_sum)
+        rules_df['importance_normal'] = rules_df.importance / rules_df.importance.sum()
+        rules_df['avg_weight'] = rules_df.weight_sum / rules_df.N
+        rules_df.sort_values('importance_normal', ascending=False, inplace=True)
 
         expl_features = [dict(exp.as_map()[1]) for exp in expl.values()]
         feature_abs_weights = defaultdict(float)
@@ -134,7 +156,9 @@ class ModelDeepDive():
                 feature_abs_weights[f] += abs(expl_feature[f])
                 feature_counts[f] += 1
         features_df = pd.DataFrame({'abs_feature_sum':feature_abs_weights, 'N':feature_counts})
-        #TODO - add count and abs, maybe sqrt abs value, normalized as well, return dataframe
+        features_df['importance'] = np.sqrt(features_df.abs_feature_sum)
+        features_df['importance_normal'] = features_df.importance / features_df.importance.sum()
+        features_df.sort_values('importance_normal', ascending=False, inplace=True)
         return rules_df, features_df
 
     def analyze_subgroup(self, decile: int):
@@ -179,35 +203,35 @@ def create_explainer(X_train, y_train):
                                                   discretize_continuous=True, discretizer='entropy')
 
 if __name__ == "__main__":
-#    path = "C:\Data\\010317\membership14_final_0103.txt"
-#    print("Loading {}".format(path))
-#    try:
-#        lc = LoadCreon(path)
-#    except FileNotFoundError:
-#        #This is for running on a machine not on network that can see the data
-#        print("File doesn't exist, generating fake data!")
-#        from sklearn.datasets import make_classification
-#        X, y = make_classification(n_samples=10000, n_features=200, n_informative=50, n_redundant=100, n_classes=2,
-#                                   n_clusters_per_class=3, weights=[0.9], flip_y=0, hypercube=False,
-#                                   random_state=101)
-#
-#        #make this like the unlabeled problem we are solving -change most to unlabeled class == -1
-#        rnd_unlabeled = np.random.choice([True, False], size=len(y), replace=True, p=[0.8,0.2])
-#        y[rnd_unlabeled] = -1
-#        X = pd.DataFrame(X)
-#        y = pd.Series(y)
-#    else:
-#        X = lc.X
-#        y = lc.y
-#    print("Done loading")
-#    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=771, stratify=y)
-#    print("Split Data: train_size {}, test_size {}".format(X_train.shape, X_test.shape))
-#    print("Create and train model")
-#    model6 = create_model_6(X_train, y_train)
-#    print("Done with model {}".format(model6))
-#    scores, _ = FrankenScorer()(model6, X_test.values, y_test.values)
-#    explainer = LimeTabularExplainer(X_train.values, feature_names=X_train.columns.values,
-#                                     feature_selection='lasso_path', class_names=['No EPI','EPI'],
-#                                     discretize_continuous=True)
+    path = "C:\Data\\010317\membership14_final_0103.txt"
+    print("Loading {}".format(path))
+    try:
+        lc = LoadCreon(path)
+    except FileNotFoundError:
+        #This is for running on a machine not on network that can see the data
+        print("File doesn't exist, generating fake data!")
+        from sklearn.datasets import make_classification
+        X, y = make_classification(n_samples=10000, n_features=200, n_informative=50, n_redundant=100, n_classes=2,
+                                   n_clusters_per_class=3, weights=[0.9], flip_y=0, hypercube=False,
+                                   random_state=101)
+
+        #make this like the unlabeled problem we are solving -change most to unlabeled class == -1
+        rnd_unlabeled = np.random.choice([True, False], size=len(y), replace=True, p=[0.8,0.2])
+        y[rnd_unlabeled] = -1
+        X = pd.DataFrame(X)
+        y = pd.Series(y)
+    else:
+        X = lc.X
+        y = lc.y
+    print("Done loading")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=771, stratify=y)
+    print("Split Data: train_size {}, test_size {}".format(X_train.shape, X_test.shape))
+    print("Create and train model")
+    model6 = create_model_6(X_train, y_train)
+    print("Done with model {}".format(model6))
+    scores, _ = FrankenScorer()(model6, X_test.values, y_test.values)
+    explainer = LimeTabularExplainer(X_train.values, feature_names=X_train.columns.values,
+                                     feature_selection='lasso_path', class_names=['No EPI','EPI'],
+                                     discretize_continuous=True)
     deep = ModelDeepDive(model6, explainer, X_test, y_test)
     print(scores)
