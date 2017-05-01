@@ -5,7 +5,8 @@ Created on Tue Jan  3 07:41:57 2017
 
 @author: jgomberg
 
-This file will contain our custom scoring metrics
+This file will contain our custom scoring metrics and handle scoring based on labeled and unlabeled data
+y == -1 represents unlabeled data
 """
 
 import pandas as pd

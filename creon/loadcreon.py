@@ -5,10 +5,16 @@ This will load data and provide some summary statistics to the dataset loaded in
 import pandas as pd
 
 class LoadCreon:
-    """Manage loading a Creon summarized dataset tab delimited into data"""
+    """Manage loading a Creon summarized dataset tab delimited into data
+    """
 
     def __init__(self, path):
-        """Path of the file to load"""
+        """ Load data from file in path, cleans data and prepares it for use in this project
+
+        Will create feature for Gender, drop unused or unwanted features, set unlabeled data to y==-1
+        Parameters:
+            path: passed into pd.read_csv, a file with tab delimited data
+        """
         data = pd.read_csv(path, sep='\t', low_memory=False)
         X = data.copy()
         # Binar-i-tize the Gender column to 1 or 0

@@ -5,11 +5,13 @@ Created on Mon Jan 16 01:53:51 2017
 @author: jeffrey.gomberg
 """
 
+import copy
 import time
 import warnings
 import numbers
 from collections import Sized, defaultdict
 from functools import partial
+import pandas as pd
 import numpy as np
 
 from sklearn.model_selection._validation import _index_param_value
@@ -22,6 +24,10 @@ from sklearn.utils.fixes import rankdata, MaskedArray
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals.joblib import logger, Parallel, delayed
 from sklearn.metrics.scorer import check_scoring
+
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from frankenscorer import FrankenScorer
 
 def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose,
                    parameters, fit_params, return_train_score=False,
@@ -559,3 +565,53 @@ class JeffRandomSearchCV(BaseSearchCV):
                     best_estimator.fit(X, **self.fit_params)
                 self.best_estimator_ = best_estimator
             return self
+
+def extract_score_grid(searcher: JeffRandomSearchCV):
+    """
+    Take a fitted scorer that used a FrankenScorer() and extract the scoring data into a scoring grid
+
+    The scorer must have cv_results_ as an attribute
+
+    return: DataFrame of scores with means and std columns for each one as well when possible
+        row is an iteration of a model, with columns of scores with splits with means, etc.
+
+    TODO - finish this comment, error checking, and break up into fewer functions
+    """
+    results = pd.DataFrame(copy.deepcopy(searcher.cv_results_))
+    splits = searcher.cv if searcher.cv is not None else 3
+    rows = len(results)
+    #create master_dict of scores
+    master_dict = {}
+    for row in range(rows):
+        row_dict = defaultdict(dict)
+        for split in range(splits):
+            for tpe in ['test','train']:
+                split_score_dict = copy.deepcopy(results['split{}_{}_score_data'.format(str(split), tpe)].iloc[row])
+                d = {}
+                for k, v in split_score_dict.items():
+                    new_key = "{}_{}{}".format(k,tpe,split)
+                    if hasattr(v, 'shape') and v.shape == (2, 2):
+                        #confusion matric deconstruction
+                        tn, fp, fn, tp = v.ravel()
+                        d["tn_%s" % new_key] = tn
+                        d["fp_%s" % new_key] = fp
+                        d["fn_%s" % new_key] = fn
+                        d["tp_%s" % new_key] = tp
+                    if FrankenScorer.score_index != k:
+                        #don't include the "SCORE" score in the grid
+                        d[new_key] = v
+                row_dict[row].update(d)
+        master_dict.update(row_dict)
+
+    score_grid = pd.DataFrame.from_dict(master_dict, orient="index")
+    score_labels = set([s[:-1] for s in score_grid.columns])
+
+    #compute mean and std
+    for label in score_labels:
+        label_score_grid = score_grid[[s for s in score_grid.columns if label == s[:-1]]]
+        mean_for_label = label_score_grid.mean(axis=1)
+        std_for_label = label_score_grid.std(axis=1)
+        score_grid["mean_{}".format(label)] = mean_for_label
+        score_grid["std_{}".format(label)] = std_for_label
+
+    return score_grid

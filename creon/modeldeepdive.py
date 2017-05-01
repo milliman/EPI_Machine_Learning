@@ -9,23 +9,14 @@ from collections import defaultdict
 import pickle
 import pandas as pd
 import numpy as np
-import scipy as sp
 
 from loadcreon import LoadCreon
-from creonmetrics import pu_scorer, prior_squared_error_scorer_015, brier_score_labeled_loss_scorer, \
-    f1_assumed_scorer, f1_labeled_scorer, report_metrics, f1_assumed_beta10_scorer, pu_mix_assumed_f1beta10_scorer
-from semisuperhelper import SemiSupervisedHelper
-from pnuwrapper import PNUWrapper
-from jeffsearchcv import JeffRandomSearchCV
-from nestedcross import NestedCV
-from frankenscorer import FrankenScorer, extract_scores_from_nested, extract_score_grid
-from searchrf import save_search, load_search
-from repeatedsampling import RepeatedRandomSubSampler
+from creonsklearn.pnuwrapper import PNUWrapper
+from creonsklearn.repeatedsampling import RepeatedRandomSubSampler
+from frankenscorer import FrankenScorer
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.base import clone
-from sklearn.externals.joblib import Parallel, delayed
 
 from lime.lime_tabular import LimeTabularExplainer
 
@@ -34,6 +25,7 @@ class ModelDeepDive():
     """
     Wraps a model and can be used to generate all tables, graphs, explanations, etc.
     Allows us to do a deep dive analysis of a model
+    TODO - finish me!
     """
 
     def __init__(self, clf, explainer: LimeTabularExplainer, X_test: pd.DataFrame, y_test: pd.Series):
