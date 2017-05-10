@@ -6,27 +6,27 @@ Created on Mon Jan 16 01:53:51 2017
 """
 
 import copy
+import numbers
+import os
+import sys
 import time
 import warnings
-import numbers
 from collections import Sized, defaultdict
 from functools import partial
-import pandas as pd
-import numpy as np
 
-from sklearn.model_selection._validation import _index_param_value
-from sklearn.model_selection._search import BaseSearchCV, ParameterSampler
-from sklearn.model_selection._split import check_cv
+import numpy as np
+import pandas as pd
 from sklearn.base import is_classifier, clone
-from sklearn.utils.metaestimators import _safe_split
-from sklearn.utils.validation import _num_samples, indexable
-from sklearn.utils.fixes import rankdata, MaskedArray
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals.joblib import logger, Parallel, delayed
 from sklearn.metrics.scorer import check_scoring
+from sklearn.model_selection._search import BaseSearchCV, ParameterSampler
+from sklearn.model_selection._split import check_cv
+from sklearn.model_selection._validation import _index_param_value
+from sklearn.utils.fixes import rankdata, MaskedArray
+from sklearn.utils.metaestimators import _safe_split
+from sklearn.utils.validation import _num_samples, indexable
 
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from frankenscorer import FrankenScorer
 
 def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose,
@@ -575,7 +575,7 @@ def extract_score_grid(searcher: JeffRandomSearchCV):
     return: DataFrame of scores with means and std columns for each one as well when possible
         row is an iteration of a model, with columns of scores with splits with means, etc.
 
-    TODO - finish this comment, error checking, and break up into fewer functions
+    TODO - finish this comment, error checking, make sure searcher used a FrankenScorer()?
     """
     results = pd.DataFrame(copy.deepcopy(searcher.cv_results_))
     splits = searcher.cv if searcher.cv is not None else 3

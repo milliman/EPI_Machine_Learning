@@ -6,18 +6,17 @@ Created on Sun Jan  8 12:30:32 2017
 @author: jgomberg
 """
 
-import numpy as np
 import unittest
-from sklearn.preprocessing import MaxAbsScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import cross_val_score, cross_val_predict
 
-from pnuwrapper import PNUWrapper
-from creonmetrics import pu_scorer, prior_squared_error_scorer_015, \
-    brier_score_labeled_loss_scorer, f1_assumed_scorer, f1_labeled_scorer
-from pnuwrapper import PNUWrapper
-from semisuperhelper import SemiSupervisedHelper
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MaxAbsScaler
+
+from creon.creonsklearn.pnuwrapper import PNUWrapper
+from creonsklearn.creonmetrics import f1_labeled_scorer
+
 
 class TestPNUWrapper(unittest.TestCase):
 

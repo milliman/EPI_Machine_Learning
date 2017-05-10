@@ -9,7 +9,7 @@ import unittest
 
 import numpy as np
 
-from creon.semisuperhelper import SemiSupervisedHelper
+from creonsklearn.frankenscorer import FrankenScorer
 
 
 class TestSemiSuperHelper(unittest.TestCase):

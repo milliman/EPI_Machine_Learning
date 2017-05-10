@@ -7,11 +7,9 @@ Created on Sun Jan 15 00:03:22 2017
 from collections import defaultdict
 
 import pandas as pd
-
+from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled, brier_score_partial_loss
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score, brier_score_loss, fbeta_score, confusion_matrix
-
-from creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled, brier_score_partial_loss
 
 def extract_scores_from_nested(scores):
     """ Extract scores from a sequence of dicts
@@ -48,7 +46,9 @@ class FrankenScorer():
         self.decision_score = decision_score
 
     """
-    This is a sklearn scorer object that returns a (dictionary, Number) instead of a number
+    This is a sklearn scorer object that returns a (dictionary, Number) instead of just a Number.
+    Will not work without modified sklearn modules that can handle a scorer that returns a dict with a Number
+    For example 
     """
     def __call__(self, estimator, X, y_true, sample_weight=None):
         y_pred = estimator.predict(X)
