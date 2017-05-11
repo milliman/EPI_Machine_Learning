@@ -27,7 +27,7 @@ from sklearn.utils.fixes import rankdata, MaskedArray
 from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _num_samples, indexable
 
-from frankenscorer import FrankenScorer
+from .frankenscorer import FrankenScorer
 
 def _fit_and_score_with_extra_data(estimator, X, y, scorer, train, test, verbose,
                    parameters, fit_params, return_train_score=False,

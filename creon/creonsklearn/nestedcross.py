@@ -15,7 +15,7 @@ from sklearn.base import is_classifier, clone
 from sklearn.metrics.scorer import check_scoring
 from sklearn.externals.joblib import Parallel, delayed
 
-from jeffsearchcv import _fit_and_score_with_extra_data, extract_score_grid
+from .jeffsearchcv import _fit_and_score_with_extra_data, extract_score_grid
 
 #TODO may want to write some helper functions to re-calc a search, find best estimators from grids
 #and then train those models with those parameters and use the self.cv_iter_ to figure out how to get
