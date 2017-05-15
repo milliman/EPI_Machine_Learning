@@ -15,7 +15,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MaxAbsScaler
 
 from creon.creonsklearn.pnuwrapper import PNUWrapper
-from creonsklearn.creonmetrics import f1_labeled_scorer
+from creon.creonsklearn.creonmetrics import f1_labeled_scorer
 
 
 class TestPNUWrapper(unittest.TestCase):

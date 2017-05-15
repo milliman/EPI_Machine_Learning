@@ -63,7 +63,7 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
     This will wrap classifiers to be used with massively unbalanced data and sample and train base estimators
     on every sample, then combine them with majority voting and / or averaged probability
 
-    WARNING: This class is very brittle and should not be used outside this project without more boilerplate, tests
+    WARNING: This class is very brittle and should not be used outside this project without more boilerplate, test
     and error checking
     """
 

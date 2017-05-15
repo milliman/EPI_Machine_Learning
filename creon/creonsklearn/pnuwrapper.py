@@ -10,14 +10,14 @@ from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 
-from semisuperhelper import SemiSupervisedHelper
+from creon.semisuperhelper import SemiSupervisedHelper
 
 
 class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
     """
     This will wrap classifiers to be used with unlabeled data
 
-    WARNING: This class is very brittle and should not be used outside this project without more boilerplate, tests
+    WARNING: This class is very brittle and should not be used outside this project without more boilerplate, test
     and error checking
     """
 
