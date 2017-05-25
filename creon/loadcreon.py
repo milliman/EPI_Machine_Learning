@@ -1,10 +1,21 @@
 """
-This will load data and provide some summary statistics to the dataset loaded in
+This will load data for the Creon project and normalize it.
+Also some helper functions for loading and saving searches
 """
 
 import pandas as pd
 
 from sklearn.exceptions import NotFittedError
+from sklearn.externals import joblib
+
+def save_search(search, filename):
+    """
+    Save a search to disk in a pickle file using joblib
+    """
+    joblib.dump(search, filename, compress=True)
+
+def load_search(filename):
+    return joblib.load(filename)
 
 class LoadCreon:
     """Manage loading a Creon summarized dataset tab delimited into data
@@ -87,6 +98,7 @@ class LoadCreon:
         X = X.drop(self.cols_to_drop, axis=1)
         X = X.drop(self._unused_cols, axis=1)
         return X
+
 
 if __name__ == "__main__":
     lc = LoadCreon("C:\Data\\010317\membership14_final_0103.txt");
