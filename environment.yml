@@ -1,6 +1,7 @@
 name: creon
 channels:
 - defaults
+- glemaitre
 dependencies:
 - ipykernel=4.5.2=py35_0
 - ipython=5.1.0=py35_0
@@ -22,6 +23,7 @@ dependencies:
 - scipy=0.18.1=np111py35_0
 - seaborn=0.7.1=py35_0
 - six=1.10.0=py35_0
+- imbalanced-learn=0.2.1=py35_0
 - pip:
   - lime==0.1.1.19
   - xgboost==0.6a2

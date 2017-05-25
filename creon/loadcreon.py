@@ -12,16 +12,17 @@ class LoadCreon:
     self.X = cleaned, processed data with a Gender Column, 
     """
 
-    def __init__(self, path, sep='\t'):
-        """ Load data from file in path, cleans data and prepares it for use in creon models
+    def __init__(self, path, sep='\t', call_fit=True):
+        """ Load data from file in pathh
 
-        Will create feature for Gender, drop unused or unwanted features, set unlabeled data to y==-1
         Parameters:
         ------------
         path: str,
-       from ..exceptions import NotFittedError     passed into pd.read_csv, a file with delimited data
+        from ..exceptions import NotFittedError     passed into pd.read_csv, a file with delimited data
         sep: str, optional, default='\t'
             delimiter of the file, tab by default
+        call_fit: Boolean, optional, default=True
+            If true, will call fit right away with default argumants, if not, you must call fit separately
         """
         data = pd.read_csv(path, sep=sep, low_memory=False)
 
@@ -32,12 +33,17 @@ class LoadCreon:
         self._unused_cols = ['unlabel_flag','true_pos_flag','true_neg_flag','MemberID','epi_related_cond',
                           'epi_related_cond_subgrp','h_rank','pert_flag','mmos','elastase_flag','medical_claim_count',
                           'rx_claim_count','CPT_FLAG44_Sum']
+        if call_fit:
+            self.fit()
 
     def fit(self, X: pd.DataFrame=None, y: pd.Series=None):
         """
         Transform the data to clear out unwanted columns and columns that provide no information.
         
+        cleans data and prepares it for use in creon models   
         For example, if a feature is all 0, then do not use it
+        Will create feature for Gender, drop unused or unwanted features, set unlabeled data to y==-1
+        Will remember which columns are used for future data coming in for preprocessing
         Parameters
         ----------
         X: default = None, if None then use self.data
