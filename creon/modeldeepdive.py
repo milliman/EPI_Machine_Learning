@@ -16,17 +16,18 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import calibration_curve
 
-from loadcreon import LoadCreon
-from creonsklearn.pnuwrapper import PNUWrapper
-from creonsklearn.repeatedsampling import RepeatedRandomSubSampler
-from creonsklearn.frankenscorer import FrankenScorer
+from creon.loadcreon import LoadCreon
+from creon.creonsklearn.pnuwrapper import PNUWrapper
+from creon.creonsklearn.repeatedsampling import RepeatedRandomSubSampler
+from creon.creonsklearn.frankenscorer import FrankenScorer
 
 
 class ModelDeepDive():
     """
     Wraps a model and can be used to generate all tables, graphs, explanations, etc.
     Allows us to do a deep dive analysis of a model
-    TODO - finish me!
+    TODO - finish me! - extract code from:
+        "Random Search Nested Cross Repeated Random Sub-Sampling - 3x3x60 with exploration.ipynb"
     """
 
     def __init__(self, clf, explainer: LimeTabularExplainer, X_test: pd.DataFrame, y_test: pd.Series):
@@ -186,7 +187,11 @@ class ModelDeepDive():
         plt.show()
 
     def generate_probability_plot(self):
-        y_prob = pd.DataFrame(self.y_df.probas, columns=['pr_one'], index=None)
+        """ Generate a plot that shows the predicted probability with the y_test results of positive, negative, and
+        unlabeled
+        """
+        y_prob = pd.DataFrame(self.y_df.probas)
+        y_prob.columns = ['pr_one']
         y_prob['label'] = self.y_test.values
         y_prob['color'] = y_prob.label.map({-1:'b', 0:'r', 1:'g'})
         y_p = y_prob.sort_values(by='pr_one').reset_index(drop=True).reset_index()
@@ -202,7 +207,6 @@ class ModelDeepDive():
                              xlim=(0, 90000), ylim=(0, 1), label='Negative')
         plt.legend(loc="upper left")
         plt.show()
-
 
     def exaplin_example_code(self, row):
         exp = self.explainer.explain_instance(row, self.clf.predict_proba, num_features=30, num_samples=10000)
