@@ -208,14 +208,6 @@ class ModelDeepDive():
         plt.legend(loc="upper left")
         plt.show()
 
-    def exaplin_example_code(self, row):
-        exp = self.explainer.explain_instance(row, self.clf.predict_proba, num_features=30, num_samples=10000)
-        with open('xxxx.html', 'w', encoding='utf-8') as t:
-            t.write(exp.as_html())
-
-        print(exp.as_list())
-        print(exp.as_map())
-
 
 ## BEST MODELS
 def create_model_6(X_train, y_train):
@@ -273,4 +265,5 @@ if __name__ == "__main__":
                                      discretize_continuous=True)
     deep = ModelDeepDive(model6, explainer, X_test, y_test)
     deep.generate_probability_plot()
+    deep.generate_calibration_plot()
     print(scores)
