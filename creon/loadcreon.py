@@ -4,6 +4,7 @@ Also some helper functions for loading and saving searches
 """
 
 import pandas as pd
+import numpy as np
 
 from sklearn.exceptions import NotFittedError
 from sklearn.externals import joblib
@@ -20,7 +21,7 @@ def load_search(filename):
 class LoadCreon:
     """Manage loading a Creon summarized dataset tab delimited into data
     self.data = original data loaded in
-    self.X = cleaned, processed data with a Gender Column, 
+    self.X = cleaned, processed data with a Gender Column,
     """
 
     def __init__(self, path, sep='\t', call_fit=True):
@@ -50,8 +51,8 @@ class LoadCreon:
     def fit(self, X: pd.DataFrame=None, y: pd.Series=None):
         """
         Transform the data to clear out unwanted columns and columns that provide no information.
-        
-        cleans data and prepares it for use in creon models   
+
+        cleans data and prepares it for use in creon models
         For example, if a feature is all 0, then do not use it
         Will create feature for Gender, drop unused or unwanted features, set unlabeled data to y==-1
         Will remember which columns are used for future data coming in for preprocessing
@@ -65,7 +66,7 @@ class LoadCreon:
             X = self.data.copy()
         else:
             X = X.copy()
-        if X.columns.equals(self.data.columns):
+        if not np.array_equal(X.columns.values, self.data.columns.values):
             raise ValueError("X must have the columns: {}".format(self.data.columns.values))
         # Binar-i-tize the Gender column to 1 or 0
         X = pd.get_dummies(X, columns=['Gender'], drop_first=True)
@@ -73,6 +74,7 @@ class LoadCreon:
         X_sums = X.sum(numeric_only=True)
         cols_to_drop = list(X_sums[X_sums == 0].index)
         X = X.drop(cols_to_drop, axis=1)
+        # store useless column headers to drop on transforms in the future
         self._cols_to_drop = cols_to_drop
         X = X.drop(self._unused_cols, axis=1)
         # set up class from the flags in the data with

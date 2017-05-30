@@ -8,13 +8,18 @@ import pickle
 from collections import defaultdict
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from lime.lime_tabular import LimeTabularExplainer
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.calibration import calibration_curve
 
+from loadcreon import LoadCreon
 from creonsklearn.pnuwrapper import PNUWrapper
 from creonsklearn.repeatedsampling import RepeatedRandomSubSampler
+from creonsklearn.frankenscorer import FrankenScorer
 
 
 class ModelDeepDive():
@@ -158,6 +163,46 @@ class ModelDeepDive():
         idxs = self.y_df[mask].index
         return self.analyze_features(idxs)
 
+    def generate_calibration_plot(self, c=1.0):
+        """ Plot a calibration curve for a classifier passed in.  c = constant to divide all probabilities by if wanted.
+
+        Note: only uses labeled data to calibrate known examples.
+        """
+        y_test_assumed = self.y_test.values.copy()
+        labeled_mask = y_test_assumed != -1
+        y_test_assumed = y_test_assumed[labeled_mask]
+        X_test_assumed = self.X_test.values.copy()[labeled_mask, :]
+
+        #y_test_assumed[y_test_assumed==-1] = 0
+        fraction_of_positives, mean_predicted_value = calibration_curve(y_test_assumed,
+                                                                        self.clf.predict_proba(X_test_assumed)[:,-1] / c,
+                                                                        n_bins=20, normalize=True)
+        fig, ax = plt.subplots()
+        ax.plot(mean_predicted_value, fraction_of_positives, "s-")
+        ax.set_ylabel("Fraction of positives")
+        ax.set_ylim([-0.05, 1.05])
+        ax.set_title('Calibration plots')
+        ax.set_xlabel('Mean predicted value')
+        plt.show()
+
+    def generate_probability_plot(self):
+        y_prob = pd.DataFrame(self.y_df.probas, columns=['pr_one'], index=None)
+        y_prob['label'] = self.y_test.values
+        y_prob['color'] = y_prob.label.map({-1:'b', 0:'r', 1:'g'})
+        y_p = y_prob.sort_values(by='pr_one').reset_index(drop=True).reset_index()
+        y_p_un = y_p[y_p.label==-1]
+        y_p_pos = y_p[y_p.label==1]
+        y_p_neg = y_p[y_p.label==0]
+        ax = y_p_un.plot.scatter(x='index', y='pr_one', color='DarkBlue', s=1, label='Unlabeled')
+        ax = y_p_pos.plot.scatter(x='index', y='pr_one', color='Green', s=400, ax=ax, label='Positive')
+        ax.set_ylabel("Probability of Positive")
+        ax.set_xlabel("# Examples")
+        ax.set_title("Positive Probability of Examples")
+        y_p_neg.plot.scatter(x='index', y='pr_one', color='Red', s=25, ax=ax, figsize=(20, 10),
+                             xlim=(0, 90000), ylim=(0, 1), label='Negative')
+        plt.legend(loc="upper left")
+        plt.show()
+
 
     def exaplin_example_code(self, row):
         exp = self.explainer.explain_instance(row, self.clf.predict_proba, num_features=30, num_samples=10000)
@@ -168,7 +213,7 @@ class ModelDeepDive():
         print(exp.as_map())
 
 
-
+## BEST MODELS
 def create_model_6(X_train, y_train):
     rf = RandomForestClassifier(bootstrap=False, class_weight=None,
                   criterion='gini',
@@ -190,6 +235,7 @@ def create_explainer(X_train, y_train):
                                                   feature_selection='lasso_path', class_names=['No EPI', 'EPI'],
                                                   discretize_continuous=True, discretizer='entropy')
 
+#EXAMPLE RUN
 if __name__ == "__main__":
     path = "C:\Data\\010317\membership14_final_0103.txt"
     print("Loading {}".format(path))
@@ -222,4 +268,5 @@ if __name__ == "__main__":
                                      feature_selection='lasso_path', class_names=['No EPI','EPI'],
                                      discretize_continuous=True)
     deep = ModelDeepDive(model6, explainer, X_test, y_test)
+    deep.generate_probability_plot()
     print(scores)
