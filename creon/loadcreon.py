@@ -18,6 +18,13 @@ def save_search(search, filename):
 def load_search(filename):
     return joblib.load(filename)
 
+# TODO - run a test that, with same column headers and random data,
+#lc = LoadCreon()
+#lx.X is None
+#X = lc.data
+#lc.fit(X)
+#lc.X == lc.transform(X)
+
 class LoadCreon:
     """Manage loading a Creon summarized dataset tab delimited into data
     self.data = original data loaded in
@@ -25,7 +32,7 @@ class LoadCreon:
     """
 
     def __init__(self, path, sep='\t', call_fit=True):
-        """ Load data from file in pathh
+        """ Load data from file in path, will set up 'y' for unlabeled data = -1, 0 = negative, 1 = positive
 
         Parameters:
         ------------
@@ -40,13 +47,16 @@ class LoadCreon:
 
         self.data = data
         self.X = None
-        self.y = None
+        # set up class from the flags in the data with
+        # -1 = unlabeled, 0 = true_negative, 1 = true_positive
+        y = (self.data.unlabel_flag * -1) + self.data.true_pos_flag
+        self.y = y
         self._cols_to_drop = None
         self._unused_cols = ['unlabel_flag','true_pos_flag','true_neg_flag','MemberID','epi_related_cond',
                           'epi_related_cond_subgrp','h_rank','pert_flag','mmos','elastase_flag','medical_claim_count',
                           'rx_claim_count','CPT_FLAG44_Sum']
         if call_fit:
-            self.fit()
+            self.fit(self.data, self.y)
 
     def fit(self, X: pd.DataFrame=None, y: pd.Series=None):
         """
@@ -54,19 +64,23 @@ class LoadCreon:
 
         cleans data and prepares it for use in creon models
         For example, if a feature is all 0, then do not use it
-        Will create feature for Gender, drop unused or unwanted features, set unlabeled data to y==-1
+        Will create feature for Gender, drop unused or unwanted features
         Will remember which columns are used for future data coming in for preprocessing
         Parameters
         ----------
-        X: default = None, if None then use self.data
-            Data to use to fit, should be the same shape as self.Data
+        X: default = None, required, if left None will raise an exception
+            Data to use to fit
         y: must be None
         """
+        if self.X is not None:
+            #TODO - find appropriate exception!
+            raise AlreadyFittedError()
         if X is None:
-            X = self.data.copy()
+            raise ValueError("X must not be None in LoadCreon.fit()")
         else:
             X = X.copy()
         if not np.array_equal(X.columns.values, self.data.columns.values):
+            #TODO - change this to show a diff in columns?
             raise ValueError("X must have the columns: {}".format(self.data.columns.values))
         # Binar-i-tize the Gender column to 1 or 0
         X = pd.get_dummies(X, columns=['Gender'], drop_first=True)
@@ -77,11 +91,7 @@ class LoadCreon:
         # store useless column headers to drop on transforms in the future
         self._cols_to_drop = cols_to_drop
         X = X.drop(self._unused_cols, axis=1)
-        # set up class from the flags in the data with
-        # -1 = unlabeled, 0 = true_negative, 1 = true_positive
-        y = (self.data.unlabel_flag * -1) + self.data.true_pos_flag
         self.X = X
-        self.y = y
 
     def transform(self, X):
         """

@@ -29,8 +29,8 @@ def generate_model_6(rf_random_state=324, subsampler_random_state=83):
                   min_samples_split=0.01, min_weight_fraction_leaf=0.0,
                   n_estimators=79, n_jobs=-1, oob_score=False, random_state=rf_random_state,
                   verbose=0, warm_start=False)
-    rep_test = RepeatedRandomSubSampler(base_estimator=rf, voting='thresh', sample_imbalance= 0.44063408204723742,
+    rep = RepeatedRandomSubSampler(base_estimator=rf, voting='thresh', sample_imbalance= 0.44063408204723742,
                                         verbose=1, subsampler_random_state=83)
-    pnu_test = PNUWrapper(base_estimator=rep_test, num_unlabeled=1.0, pu_learning=True, random_state=1)
-    return pnu_test
+    pnu = PNUWrapper(base_estimator=rep, num_unlabeled=1.0, pu_learning=True, random_state=1)
+    return pnu
 

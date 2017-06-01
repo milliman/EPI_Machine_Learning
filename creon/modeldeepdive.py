@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+This class helps to explain models using LIME and generate some graphs of the results of a model.
+
 Created on Wed Apr 19 17:52:18 2017
 
 @author: jeffrey.gomberg
@@ -12,14 +14,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from lime.lime_tabular import LimeTabularExplainer
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import calibration_curve
 
 from creon.loadcreon import LoadCreon
-from creon.creonsklearn.pnuwrapper import PNUWrapper
-from creon.creonsklearn.repeatedsampling import RepeatedRandomSubSampler
 from creon.creonsklearn.frankenscorer import FrankenScorer
+from creon.bestmodels import generate_model_6
 
 
 class ModelDeepDive():
@@ -211,16 +211,7 @@ class ModelDeepDive():
 
 ## BEST MODELS
 def create_model_6(X_train, y_train):
-    rf = RandomForestClassifier(bootstrap=False, class_weight=None,
-                  criterion='gini',
-                  max_depth=64, max_features=87, max_leaf_nodes=None,
-                  min_impurity_split=1e-07, min_samples_leaf=8,
-                  min_samples_split=0.01, min_weight_fraction_leaf=0.0,
-                  n_estimators=79, n_jobs=-1, oob_score=False, random_state=324,
-                  verbose=0, warm_start=False)
-    rep_test = RepeatedRandomSubSampler(base_estimator=rf, voting='thresh', sample_imbalance= 0.44063408204723742,
-                                        verbose=1, random_state=83)
-    pnu_test = PNUWrapper(base_estimator=rep_test, num_unlabeled=1.0, pu_learning=True, random_state=1)
+    pnu_test = generate_model_6()
     pnu_test.fit(X_train.values, y_train.values)
     return pnu_test
 
