@@ -4,9 +4,8 @@ Also some helper functions for loading and saving searches
 """
 
 import pandas as pd
-import numpy as np
 
-from sklearn.exceptions import NotFittedError
+from sklearn.exceptions import NotFittedError, ChangedBehaviorWarning
 from sklearn.externals import joblib
 
 def save_search(search, filename):
@@ -17,6 +16,9 @@ def save_search(search, filename):
 
 def load_search(filename):
     return joblib.load(filename)
+
+#TODO - seperate this out to 2 classes, 1 that holds data from a file, and the other with the transofrmations
+#only, which should be able to be pickled I would assume
 
 # TODO - run a test that, with same column headers and random data,
 #lc = LoadCreon()
@@ -73,15 +75,18 @@ class LoadCreon:
         y: must be None
         """
         if self.X is not None:
-            #TODO - find appropriate exception!
-            raise AlreadyFittedError()
+            raise ChangedBehaviorWarning()
         if X is None:
             raise ValueError("X must not be None in LoadCreon.fit()")
         else:
             X = X.copy()
-        if not np.array_equal(X.columns.values, self.data.columns.values):
-            #TODO - change this to show a diff in columns?
-            raise ValueError("X must have the columns: {}".format(self.data.columns.values))
+        X_cols = set(X.columns.values)
+        data_cols = set(self.data.columns.values)
+        if X_cols != data_cols:
+            missing_cols = data_cols - X_cols
+            extra_cols = X_cols - data_cols
+            raise ValueError("X missing {} cols [{}], and has {} extra cols [{}]".format(len(missing_cols),
+                             missing_cols, len(extra_cols), extra_cols))
         # Binar-i-tize the Gender column to 1 or 0
         X = pd.get_dummies(X, columns=['Gender'], drop_first=True)
         # drop all useless columns
@@ -92,6 +97,9 @@ class LoadCreon:
         self._cols_to_drop = cols_to_drop
         X = X.drop(self._unused_cols, axis=1)
         self.X = X
+
+        #return this instance so compatible with pipeplining in sklearn
+        return self
 
     def transform(self, X):
         """
@@ -107,10 +115,9 @@ class LoadCreon:
             raise NotFittedError("Must fit LoadCreon before transforming data!")
         X = X.copy()
         X = pd.get_dummies(X, columns=['Gender'], drop_first=True)
-        X = X.drop(self.cols_to_drop, axis=1)
+        X = X.drop(self._cols_to_drop, axis=1)
         X = X.drop(self._unused_cols, axis=1)
         return X
-
 
 if __name__ == "__main__":
     lc = LoadCreon("C:\Data\\010317\membership14_final_0103.txt");

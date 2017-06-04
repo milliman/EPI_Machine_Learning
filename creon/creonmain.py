@@ -14,8 +14,8 @@ from sklearn.externals import joblib
 from sklearn.pipeline import Pipeline
 from sklearn.exceptions import NotFittedError, ChangedBehaviorWarning
 
-from loadcreon import LoadCreon
-from bestmodels import generate_model_6
+from creon.loadcreon import LoadCreon
+from creon.bestmodels import generate_model_6
 
 def save_clf(clf, filename):
     """
@@ -29,7 +29,7 @@ def load_clf(filename):
 class CreonModel:
 
     def __init__(self):
-        self.clf: Pipeline = None
+        self.clf = None
         return
 
     def generate_trained_model(self, path: str, sep='\t', generate_clf_fn=generate_model_6, **kwargs):
@@ -52,7 +52,7 @@ class CreonModel:
         lc = LoadCreon(path, sep=sep, call_fit=False)
         clf = generate_clf_fn(**kwargs)
         pipe = Pipeline([('lc',lc),('model',clf)])
-        pipe.fit(lc.X, lc.y)
+        pipe.fit(lc.data, lc.y)
         self.clf = pipe
         return self.clf
 
