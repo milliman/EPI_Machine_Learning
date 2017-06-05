@@ -51,7 +51,7 @@ class CreonModel:
         """
         lc = LoadCreon(path, sep=sep, call_fit=False)
         clf = generate_clf_fn(**kwargs)
-        pipe = Pipeline([('lc',lc),('model',clf)])
+        pipe = Pipeline([('lc',lc.transformer),('model',clf)])
         pipe.fit(lc.data, lc.y)
         self.clf = pipe
         return self.clf
