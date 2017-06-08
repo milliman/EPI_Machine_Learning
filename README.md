@@ -119,11 +119,10 @@ from Anaconda to create a compatible runtime environment for this project.
 
 * Repo owner or admin
 
- **Jeff Gomberg**
-
- jgomberg@aibraintree.com
+ **Jeff Gomberg**  
+ jgomberg@aibraintree.com  
 
 * Other community or team contacts
 
- **Monica Son**
+ **Monica Son**  
  **Motoharu Dei**
