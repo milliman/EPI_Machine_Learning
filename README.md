@@ -117,12 +117,12 @@ from Anaconda to create a compatible runtime environment for this project.
 
 ### Who do I talk to?
 
-* Repo owner or admin
+#### Repo owner or admin
 
  **Jeff Gomberg**  
  jgomberg@aibraintree.com  
 
-* Other community or team contacts
+#### Other community or team contacts
 
  **Monica Son**  
  **Motoharu Dei**
