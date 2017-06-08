@@ -1,25 +1,24 @@
-# Creon #
+# Creon
 
 This project is what was used in the memo:
-<reference memo here>
+_**reference memo here**_
 
-### What is this repository for? ###
+## What is this repository for?
 
-* Quick summary
+### Quick summary
 
-This repository is used to train, evaluate, and use models to predict prevalence of EPI
-in a medical claims database
+ This repository is used to train, evaluate, and use models to predict prevalence of EPI
+ in a medical claims database
 
-* Version 0.1
+### **Version 0.1**
 
 
-### How do I get set up? ###
+### How do I get set up?
 
-* Summary of set up
-Clone the repository and start using creon.creonmain.py with data generated from <insert claims db>
-and processed through <SAS program here>.
+Clone the repository and start using _creon.creonmain.py_ with data generated from **_<insert claims db>_**
+and processed through **_<SAS program here>_**.
 The input dataset must have these columns:
-['MemberID', 'age', 'Gender', 'epi_related_cond',
+>['MemberID', 'age', 'Gender', 'epi_related_cond',
        'epi_related_cond_subgrp', 'pert_flag', 'mmos', 'h_rank',
        'elastase_flag', 'true_pos_flag', 'true_neg_flag', 'unlabel_flag',
        'medical_claim_count', 'rx_claim_count', 'DIAG_FLAG1_Sum',
@@ -112,14 +111,17 @@ The input dataset must have these columns:
        'ndc_cat103_Sum', 'ndc_cat104_Sum', 'ndc_cat105_Sum',
        'ndc_cat106_Sum', 'ndc_cat107_Sum']
 
-The "environment.yml" file describes the environment needed to run the code.  Please use:
-* conda env create -f environment.yml
+The _"environment.yml"_ file describes the environment needed to run the code.  Please use:
+>conda env create -f environment.yml
 from Anaconda to create a compatible runtime environment for this project.
 
-### Who do I talk to? ###
+### Who do I talk to?
 
 * Repo owner or admin
-Jeff Gomberg
 
-* Other community or team contact
-<insert Milliman employees here>
+ **Jeff Gomberg**
+ jgomberg@aibraintree.com
+
+* Other community or team contacts
+ **Monica Son**
+ **Motoharu Dei**

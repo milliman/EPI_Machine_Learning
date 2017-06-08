@@ -146,7 +146,9 @@ class BlaggingClassifier(BaggingClassifier):
     """ Blagging Classifier - just like Bagging but with more options to deal with
     imblanced classes.
 
-    See :ref: Bagging in sklearn.ensembles
+    See :ref: Bagging in sklearn.ensembles and
+    :ref: https://svds.com/learning-imbalanced-classes/
+    For similar concepts and ideas
 
     Parameters
     ----------
@@ -154,8 +156,6 @@ class BlaggingClassifier(BaggingClassifier):
         Number from 1.0 to 0.01.  Represents n_minority_class / n_majority_class in each Bag
         If None then there is no balanced downsampling
 
-    #TODO - create a parameter here for repeated random sub-sampling instead - ie, go through every
-    majority class once... figure out weighting for base_estimators based on unlabeled ratios, etc.
     """
     def __init__(self,
                  base_estimator=None,
