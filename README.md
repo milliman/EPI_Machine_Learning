@@ -16,7 +16,7 @@ _**reference memo here**_
 ### How do I get set up?
 
 Clone the repository and start using _creon.creonmain.py_ with data generated into a tab separated value file.
-CSV files would also suffice as long as a comma (_,_) is passed into the _sep_ parameter.
+CSV files would also suffice as long as a comma (_,_) is passed into the _sep_ parameter of _generate_trained_model_.
 
 The input dataset used in the study has these columns:
 >['MemberID', 'age', 'Gender', 'epi_related_cond',
@@ -118,12 +118,11 @@ from Anaconda to create a compatible runtime environment for this project.
 
 ### Who do I talk to?
 
-#### Repo owner or admin
+#### Repo owners / admins
 
  **Jeff Gomberg**  
  jgomberg@aibraintree.com  
-
-#### Other community or team contacts
-
  **Monica Son**  
- **Motoharu Dei**
+ Monica.Son@Milliman.com  
+ **Motoharu Dei**  
+ Motoharu.Dei@Milliman.com
