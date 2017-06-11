@@ -113,7 +113,9 @@ The input dataset used in the study has these columns:
        'ndc_cat106_Sum', 'ndc_cat107_Sum']
 
 The _"environment.yml"_ file describes the environment needed to run the code.  Please use:
->conda env create -f environment.yml
+'''
+conda env create -f environment.yml
+'''
 from Anaconda to create a compatible runtime environment for this project.
 
 ### Who do I talk to?
