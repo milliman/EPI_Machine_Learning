@@ -18,8 +18,15 @@ _**reference memo here**_
 Clone the repository and start using _creon.creonmain.py_ with data generated into a tab separated value file.
 CSV files would also suffice as long as a comma (_,_) is passed into the _sep_ parameter of _generate_trained_model_.
 
-The input dataset used in the study has these columns:
->['MemberID', 'age', 'Gender', 'epi_related_cond',
+The input dataset used in the study has this format:
+
+SAS Flag Name | Long Name | Description
+--- | --- | ---
+`MemberID`| ID of patient | anonymous patient
+`age` | Age of patient | How old patient is
+
+
+'Gender, 'epi_related_cond',
        'epi_related_cond_subgrp', 'pert_flag', 'mmos', 'h_rank',
        'elastase_flag', 'true_pos_flag', 'true_neg_flag', 'unlabel_flag',
        'medical_claim_count', 'rx_claim_count', 'DIAG_FLAG1_Sum',
@@ -113,12 +120,10 @@ The input dataset used in the study has these columns:
        'ndc_cat106_Sum', 'ndc_cat107_Sum']
 
 The _"environment.yml"_ file describes the environment needed to run the code.  Please use:
-'''
+```
 conda env create -f environment.yml
-'''
+```
 from Anaconda to create a compatible runtime environment for this project.
-
-### Who do I talk to?
 
 #### Repo owners / admins
 
