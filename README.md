@@ -16,7 +16,7 @@ _**reference memo here**_
 ### How do I get set up?
 
 Clone the repository and start using _creon.creonmain.py_ with data generated into a tab separated value file.
-CSV files would also suffice as long as a "comma" is passed into the _sep_ parameter.
+CSV files would also suffice as long as a comma (_,_) is passed into the _sep_ parameter.
 
 The input dataset used in the study has these columns:
 >['MemberID', 'age', 'Gender', 'epi_related_cond',
