@@ -15,9 +15,10 @@ _**reference memo here**_
 
 ### How do I get set up?
 
-Clone the repository and start using _creon.creonmain.py_ with data generated from **_<insert claims db>_**
-and processed through **_<SAS program here>_**.
-The input dataset must have these columns:
+Clone the repository and start using _creon.creonmain.py_ with data generated into a tab separated value file.
+CSV files would also suffice as long as a "comma" is passed into the _sep_ parameter.
+
+The input dataset used in the study has these columns:
 >['MemberID', 'age', 'Gender', 'epi_related_cond',
        'epi_related_cond_subgrp', 'pert_flag', 'mmos', 'h_rank',
        'elastase_flag', 'true_pos_flag', 'true_neg_flag', 'unlabel_flag',
