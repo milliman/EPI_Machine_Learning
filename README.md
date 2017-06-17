@@ -3,9 +3,7 @@
 This project is referenced in the memo:
 _**reference memo here**_
 
-## What is this repository for?
-
-### Quick summary
+### What is this repository for?
 
  This repository is used to train, evaluate, and use models to predict prevalence of EPI
  in a medical claims database.  It also contains additions to the Scikit-Learn Python library
@@ -15,12 +13,9 @@ _**reference memo here**_
 
 ### **Version 0.1**
 
+### Requirements
 
-### How do I get set up?
-
-#### Requirements
-
-The _`environment.yml`_ file describes the environment needed to run the code.  Please use:
+The `environment.yml` file describes the environment needed to run the code.  Please use:
 ```
 conda env create -f environment.yml
 ```
@@ -28,14 +23,29 @@ from Anaconda to create a compatible runtime environment for this project.
 
 Please see [input data format](#Input-data-format) for a description of the data used to train models in this project.
 
-#### Main entry-point to use best models
+### Main entry-point to use best models
 
-Clone the repository and start using _creon.creonmain.py_ with data generated into a tab separated value file.
-CSV files would also suffice as long as a comma (_,_) is passed into the _sep_ parameter of _generate_trained_model_.
+Clone the repository and start using `creon.creonmain.py` with data generated into a tab separated value file.
+CSV files would also suffice as long as a comma (_,_) is passed into the `sep` parameter of `generate_trained_model`.
 
 Please see `Creonmain Example.ipynb` for an example of how to start using the library.
 
-#### Input data format
+### Python File Descriptions
+File | Description
+---|---
+`creonmain.py` | Main entrypoint to train, save, load, and use models
+`loadcreon.py` | Used to load data and normalize / clean it for training
+`modeldeepdive.py` | Code to generate graphs and analysis / descriptions of models generated in the project
+`brestmodels.py` | Hard coded model(s) with parameters found to be good during various searches for hyper-parameters
+`semisuperhelper.py` | Helper code to handle unlabeled data (labeled as `-1`)
+
+
+### Notebook File Descriptions
+File | Description
+--- | ---
+
+
+### Input data format
 
 Note that the code will run as long as there is a `Gender` column in the data along with 
 
@@ -142,7 +152,7 @@ SAS Flag Name | Long Name | Description
 
 
 
-#### Repo owners / admins
+### Repo owners / admins
 
  **Jeff Gomberg**  
  jgomberg@aibraintree.com  
