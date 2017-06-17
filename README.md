@@ -1,6 +1,6 @@
 # Creon
 
-This project is what was used in the memo:
+This project is referenced in the memo:
 _**reference memo here**_
 
 ## What is this repository for?
@@ -8,17 +8,38 @@ _**reference memo here**_
 ### Quick summary
 
  This repository is used to train, evaluate, and use models to predict prevalence of EPI
- in a medical claims database
+ in a medical claims database.  It also contains additions to the Scikit-Learn Python library
+ to experiment with oversampling / undersampling techniques for large class imbalances,
+ nested cross validation, metrics for use with unlabeled data, and random search for hyper-parameters
+ using multiple metrics at the same time.
 
 ### **Version 0.1**
 
 
 ### How do I get set up?
 
+#### Requirements
+
+The _`environment.yml`_ file describes the environment needed to run the code.  Please use:
+```
+conda env create -f environment.yml
+```
+from Anaconda to create a compatible runtime environment for this project.
+
+Please see [input data format](#input-data-format) for a description of the data used to train models in this project.
+
+#### Main entry-point to use best models
+
 Clone the repository and start using _creon.creonmain.py_ with data generated into a tab separated value file.
 CSV files would also suffice as long as a comma (_,_) is passed into the _sep_ parameter of _generate_trained_model_.
 
-The input dataset used in the study has this format:
+Please see `Creonmain Example.ipynb` for an example of how to start using the library.
+
+#### Input data format
+
+Note that the code will run as long as there is a `Gender` column in the data along with 
+
+The input dataset used in the study had this format:
 
 SAS Flag Name | Long Name | Description
 --- | --- | ---
@@ -119,11 +140,7 @@ SAS Flag Name | Long Name | Description
        'ndc_cat103_Sum', 'ndc_cat104_Sum', 'ndc_cat105_Sum',
        'ndc_cat106_Sum', 'ndc_cat107_Sum']
 
-The _"environment.yml"_ file describes the environment needed to run the code.  Please use:
-```
-conda env create -f environment.yml
-```
-from Anaconda to create a compatible runtime environment for this project.
+
 
 #### Repo owners / admins
 

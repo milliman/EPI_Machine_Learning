@@ -48,7 +48,7 @@ class LoadCreonTransformer:
         self._unused_cols = ['unlabel_flag','true_pos_flag','true_neg_flag','MemberID','epi_related_cond',
                           'epi_related_cond_subgrp','h_rank','pert_flag','mmos','elastase_flag','medical_claim_count',
                           'rx_claim_count','CPT_FLAG44_Sum']
-        X = X.drop(self._unused_cols, axis=1)
+        X = X.drop(self._unused_cols, axis=1, errors='ignore')
         X_sums = X.sum(numeric_only=True)
         self._cols_to_drop = list(X_sums[X_sums == 0].index)
         return self
@@ -68,7 +68,7 @@ class LoadCreonTransformer:
         X = pd.get_dummies(X, columns=self._cols_to_binarize, drop_first=True)
         # drop columns
         X = X.drop(self._cols_to_drop, axis=1)
-        X = X.drop(self._unused_cols, axis=1)
+        X = X.drop(self._unused_cols, axis=1, errors='ignore')
         return X
 
 
