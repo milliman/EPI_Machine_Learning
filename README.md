@@ -38,7 +38,13 @@ File | Description
 `modeldeepdive.py` | Code to generate graphs and analysis / descriptions of models generated in the project
 `brestmodels.py` | Hard coded model(s) with parameters found to be good during various searches for hyper-parameters
 `semisuperhelper.py` | Helper code to handle unlabeled data (labeled as `-1`)
-
+`creonsklearn.creonmetrics.py` | Custom scoring metrics for models using unlabled data
+`creonsklearn.frankenscorer.py` | An Sklearn scorer object that can score multiple metrics at once
+`creonsklearn.jeffsearch.py` | A random search of hyper-parameters using a Frankenscorer
+`creonsklearn.nestedcross.py` | A class that runs a nested cross validation search
+`creonsklearn.pnuwrapper.py` | Wraps classifiers to be used with unlabeled data PNU = *P*ositive *N*egative *U*nlabled
+`creonsklearn.repeatedsampling.py` | Wraps classifiers to be used with massively unbalanced data using repeated oversampling
+`creonsklearn.rfsubsample.py` | A modified Random Forest algorithm where every bootstrapped sample used adheres to a _target imbalance ratio_
 
 ### Notebook File Descriptions
 File | Description

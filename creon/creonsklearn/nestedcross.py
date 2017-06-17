@@ -17,10 +17,6 @@ from sklearn.externals.joblib import Parallel, delayed
 
 from .jeffsearchcv import _fit_and_score_with_extra_data, extract_score_grid
 
-#TODO may want to write some helper functions to re-calc a search, find best estimators from grids
-#and then train those models with those parameters and use the self.cv_iter_ to figure out how to get
-#a good estimate of other folds
-
 class NestedCV():
     """ Class to perform validation and keep all the models
     """
