@@ -26,7 +26,7 @@ conda env create -f environment.yml
 ```
 from Anaconda to create a compatible runtime environment for this project.
 
-Please see [input data format](#input-data-format) for a description of the data used to train models in this project.
+Please see [input data format](#Input-data-format) for a description of the data used to train models in this project.
 
 #### Main entry-point to use best models
 
