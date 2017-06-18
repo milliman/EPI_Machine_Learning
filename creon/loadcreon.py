@@ -100,7 +100,7 @@ class LoadCreon:
         self.y = y
         self.transformer = LoadCreonTransformer()
         if call_fit:
-            self.transformer.fit(self.data, self.y)
+            self.fit(self.data, self.y)
 
     def fit(self, X: pd.DataFrame=None, y: pd.Series=None):
         """
@@ -117,6 +117,7 @@ class LoadCreon:
         y: must be None
         """
         self.transformer.fit(X, y)
+        self.X = self.transformer.transform(X)
         return self
 
     def transform(self, X):

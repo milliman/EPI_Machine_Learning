@@ -50,7 +50,10 @@ File | Description
 File | Description
 --- | ---
 `Creonmain Example.ipynb` | Example code on how to use creonmain.py
-`` | TODO FINISH ME!!!!!
+`ModelDeepDive with Model6.ipynb` | Example code on how to use ModelDeepDive with _Model 6_ from the memo
+`LASSO - PN and PNU.ipynb` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data which is undersampled
+`SVC - PN and PNU.ipynb` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled
+
 
 ### Input data format
 
