@@ -49,11 +49,13 @@ File | Description
 ### Notebook File Descriptions
 File | Description
 --- | ---
-`Creonmain Example.ipynb` | Example code on how to use creonmain.py
-`ModelDeepDive with Model6.ipynb` | Example code on how to use ModelDeepDive with _Model 6_ from the memo
-`LASSO - PN and PNU.ipynb` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data (pnuwrapper.py) which is undersampled
-`SVC - PN and PNU.ipynb` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled using pnuwrapper.py
+`Creonmain Example` | Example code on how to use creonmain.py
+`ModelDeepDive with Model6` | Example code on how to use ModelDeepDive with _Model 6_ from the memo
+`LASSO - PN and PNU` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data (pnuwrapper.py) which is undersampled
+`SVC - PN and PNU` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled using pnuwrapper.py
 `RF - PNU Random Search` | A nested cross validated 3x3 100 iteration search for a Random Forest (RF) classifier wrapped with PNU data which is undersampled using pnuwrapper.py.  2 different metrics are used to optimize results seperately.
+`RF - PNU All Data` | Use a good performing RF model found in previous searches and test with undersampling turned off, then generate a validation curve for an undersampling parameter in pnuwrapper.py
+`RF - PNU Repeated Random Subsampling Random Search` | A nested cross validated 3x3 60 iteration search for a RF using repeated random subsampling (oversampling) using all PNU data.  This notebook also contains a lot of exploration and graphs around the best model found.
 
 
 ### Input data format
