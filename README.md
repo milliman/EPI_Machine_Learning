@@ -42,7 +42,7 @@ File | Description
 `creonsklearn.frankenscorer.py` | An Sklearn scorer object that can score multiple metrics at once
 `creonsklearn.jeffsearch.py` | A random search of hyper-parameters using a Frankenscorer
 `creonsklearn.nestedcross.py` | A class that runs a nested cross validation search
-`creonsklearn.pnuwrapper.py` | Wraps classifiers to be used with unlabeled data PNU = *P*ositive *N*egative *U*nlabled
+`creonsklearn.pnuwrapper.py` | Wraps classifiers to be used with unlabeled data PNU = *P*ositive *N*egative *U*nlabled and has mechanism for random undersampling of unlabeled data
 `creonsklearn.repeatedsampling.py` | Wraps classifiers to be used with massively unbalanced data using repeated oversampling
 `creonsklearn.rfsubsample.py` | A modified Random Forest algorithm where every bootstrapped sample used adheres to a _target imbalance ratio_, uses oversampling
 
@@ -51,8 +51,9 @@ File | Description
 --- | ---
 `Creonmain Example.ipynb` | Example code on how to use creonmain.py
 `ModelDeepDive with Model6.ipynb` | Example code on how to use ModelDeepDive with _Model 6_ from the memo
-`LASSO - PN and PNU.ipynb` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data which is undersampled
-`SVC - PN and PNU.ipynb` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled
+`LASSO - PN and PNU.ipynb` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data (pnuwrapper.py) which is undersampled
+`SVC - PN and PNU.ipynb` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled using pnuwrapper.py
+`RF - PNU Random Search` | A nested cross validated 3x3 100 iteration search for a Random Forest (RF) classifier wrapped with PNU data which is undersampled using pnuwrapper.py.  2 different metrics are used to optimize results seperately.
 
 
 ### Input data format
