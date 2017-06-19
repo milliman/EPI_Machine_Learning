@@ -60,7 +60,7 @@ File | Description
 
 ### Input data format
 
-Note that the code will run as long as there is a `Gender` column in the data along with 
+Note that the code will run as long as there is a `Gender` column in the data along with some set of the columns below:
 
 The input dataset used in the study had this format:
 
