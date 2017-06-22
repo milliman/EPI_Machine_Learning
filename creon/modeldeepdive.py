@@ -27,7 +27,7 @@ class ModelDeepDive():
     Wraps a model and can be used to generate all tables, graphs, explanations, etc.
     Allows us to do a deep dive analysis of a model
     TODO - finish me! - extract code from:
-        "Random Search Nested Cross Repeated Random Sub-Sampling - 3x3x60 with exploration.ipynb"
+        "RF - PNU Repeated Random Subsampling Random Searn.ipynb"
     """
 
     def __init__(self, clf, explainer: LimeTabularExplainer, X_test: pd.DataFrame, y_test: pd.Series):
@@ -200,13 +200,72 @@ class ModelDeepDive():
         y_p_neg = y_p[y_p.label==0]
         ax = y_p_un.plot.scatter(x='index', y='pr_one', color='DarkBlue', s=1, label='Unlabeled')
         ax = y_p_pos.plot.scatter(x='index', y='pr_one', color='Green', s=400, ax=ax, label='Positive')
+        ax = y_p_neg.plot.scatter(x='index', y='pr_one', color='Red', s=25, ax=ax, figsize=(20, 10),
+                             xlim=(0, int(len(y_prob)*1.05)), ylim=(0, 1), label='Negative')
         ax.set_ylabel("Probability of Positive")
-        ax.set_xlabel("# Examples")
+        ax.set_xlabel("Patient")
         ax.set_title("Positive Probability of Examples")
-        y_p_neg.plot.scatter(x='index', y='pr_one', color='Red', s=25, ax=ax, figsize=(20, 10),
-                             xlim=(0, 90000), ylim=(0, 1), label='Negative')
         plt.legend(loc="upper left")
         plt.show()
+
+    def generate_feature_importance_plot(self, num_features=20):
+        """ Generate a plot that shows the feature importance of a model graphically assuming the model has
+        the 'feature_importances_' attribute
+
+        Parameters:
+        ---------------------
+        num_features: int, optional, default=20
+            number of features to graph, takes the top num_features in terms of importance
+        """
+        if not hasattr(self.clf, 'feature_importances_'):
+            raise AttributeError("self.clf type {} in ModelDeepDive does not have attribute feature_importances_".
+                                 format(type(self.clf)))
+        fi = self.clf.feature_importances_
+        fi_df = pd.DataFrame(fi, index=self.X_test.columns.values, columns=['Importance']).sort_values(by='Importance',
+                             ascending=False)
+        fi_df = fi_df.round(5) * 100    #convert to integers that will be between 0-100
+        ax = fi_df.iloc[:num_features].iloc[::-1].plot(kind='barh',
+                                                    title='Feature Importance: Top {}'.format(num_features))
+        ax.legend(loc='right')
+        return ax
+
+    def generate_probability_distribution(self):
+        """ Generate a plot that shows the probability distribution of the test set
+        """
+        probas_df = pd.DataFrame(data={'probas':self.y_df.probas}).sort_values(by='probas', ascending=False)
+        probas_df['probas'] = probas_df.probas * 100
+        ax = probas_df.plot.hist(bins=100, title='Probability Distribution', legend=False)
+        ax.set_xlabel('Predicted Probability')
+        ax.set_ylabel('# Patients')
+        return ax
+
+    def generate_percentile_table(self):
+        """ Generate a table with a breakdown of how many patients ended up in each 5% bucket of probability
+        of having EPI, along with summary stats on the makeup of each bucket
+        """
+        probas_df = pd.DataFrame(data={'probas':self.y_df.probas, 'y_test':self.y_test.values}).sort_values(by='probas',
+                                                                                                    ascending=False)
+        bins = np.linspace(0.0, 1.0, 101)
+        percent = pd.cut(probas_df['probas'], bins=bins, include_lowest=True, precision=6, labels=list(range(0,100)))
+        probas_df['percent'] = percent
+        bins5 = np.linspace(0.0, 1.0, 21)
+        percent5 = pd.cut(probas_df['probas'], right=True, bins=bins5, include_lowest=True, precision=6,
+                  labels=['0%-5%','5%-10%','10%-15%','15%-20%','20%-25%','25%-30%','30%-35%','35%-40%','40%-45%',
+                          '45%-50%','50%-55%','55%-60%','60%-65%','65%-70%','70%-75%','75%-80%','80%-85%','85%-90%',
+                          '90%-95%','95%-100%'])
+        probas_df['percent5'] = percent5
+        dummies = pd.get_dummies(probas_df['y_test'], prefix='y=', prefix_sep='')
+        probas_df = pd.concat([probas_df, dummies], axis=1)
+        probas_group = probas_df.groupby('percent5')
+        percentile_df = probas_group.aggregate({'probas':'count', 'y=-1':'sum', 'y=0':'sum', 'y=1':'sum'})
+        labeled_tot = percentile_df['y=1'] + percentile_df['y=0']
+        percentile_df['unlabeled_pct'] = percentile_df['y=-1'] / percentile_df.probas
+        percentile_df['true_pos_pct'] = percentile_df['y=1'] / labeled_tot
+        percentile_df['true_neg_pct'] = percentile_df['y=0'] / labeled_tot
+        percentile_df.columns = ['Unlabeled','Negative','Positive','# Patients','% unlabeled','% Positive of Labeled',
+                                 '% Negative of Labeled']
+        percentile_df.index.name = 'Percentile Bucket'
+        return percentile_df
 
 
 ## BEST MODELS
