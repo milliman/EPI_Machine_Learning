@@ -17,15 +17,11 @@ def save_search(search, filename):
 def load_search(filename):
     return joblib.load(filename)
 
-# TODO - run a test that, with same column headers and random data,
-#lc = LoadCreon()
-#lx.X is None
-#X = lc.data
-#lc.fit(X)
-#lc.X == lc.transform(X)
-
 class LoadCreonTransformer:
     """Transforms a dataset by cleaning data, normalizing features, and dropping unused and unnecessary columns
+
+    This class can be used as a scikit-learn transformer in a pipeline so that the data cleaning step is used
+    consistently across training data and future patient data.
     """
 
     def __init__(self):
@@ -73,9 +69,13 @@ class LoadCreonTransformer:
 
 
 class LoadCreon:
-    """Manage loading a Creon summarized dataset tab delimited into data
+    """Manage loading a Creon summarized dataset
     self.data = original data loaded in
-    self.X = cleaned, processed data with a Gender Column,
+    self.X = cleaned, processed data with a Gender Column
+    self.y = target varible created with data passed in
+    self.transformer = a scikit-learn transformer used to clean and normalize the data passed in
+        This can be used in a pipeline so that the cleaning step is remembered in whatever model is used
+        for future predictions of data not included in the original training data.
     """
 
     def __init__(self, path, sep='\t', call_fit=True):
@@ -84,7 +84,7 @@ class LoadCreon:
         Parameters:
         ------------
         path: str,
-        from ..exceptions import NotFittedError     passed into pd.read_csv, a file with delimited data
+            passed into pd.read_csv, a file with delimited data
         sep: str, optional, default='\t'
             delimiter of the file, tab by default
         call_fit: Boolean, optional, default=True
