@@ -5,17 +5,79 @@ Created on Sat Jan 14 23:41:21 2017
 @author: jeffrey.gomberg
 """
 
+from collections import Iterable
+
 import numpy as np
 import pandas as pd
 import numbers
 
+from sklearn.utils.multiclass import type_of_target
 from sklearn.model_selection._validation import indexable
-from sklearn.model_selection._split import check_cv
+from sklearn.model_selection._split import _CVIterableWrapper, StratifiedKFold, KFold
 from sklearn.base import is_classifier, clone
 from sklearn.metrics.scorer import check_scoring
 from sklearn.externals.joblib import Parallel, delayed
 
 from .jeffsearchcv import _fit_and_score_with_extra_data, extract_score_grid
+
+def check_cv2(cv=3, y=None, classifier=False, random_state=None):
+    """Input checker utility for building a cross-validator
+
+    NOTE: this is the same as sklearn.model_selection._split.check_cv but with an added parameter for random_state
+    So that nested CV splits are reproduceable
+
+    Parameters
+    ----------
+    cv : int, cross-validation generator or an iterable, optional
+        Determines the cross-validation splitting strategy.
+        Possible inputs for cv are:
+          - None, to use the default 3-fold cross-validation,
+          - integer, to specify the number of folds.
+          - An object to be used as a cross-validation generator.
+          - An iterable yielding train/test splits.
+
+        For integer/None inputs, if classifier is True and ``y`` is either
+        binary or multiclass, :class:`StratifiedKFold` is used. In all other
+        cases, :class:`KFold` is used.
+
+        Refer :ref:`User Guide <cross_validation>` for the various
+        cross-validation strategies that can be used here.
+
+    y : array-like, optional
+        The target variable for supervised learning problems.
+
+    classifier : boolean, optional, default False
+        Whether the task is a classification task, in which case
+        stratified KFold will be used.
+
+    random_state : None, int or RandomState
+        When shuffle=True, pseudo-random number generator state used for
+        shuffling. If None, use default numpy RNG for shuffling.
+
+    Returns
+    -------
+    checked_cv : a cross-validator instance.
+        The return value is a cross-validator which generates the train/test
+        splits via the ``split`` method.
+    """
+    if cv is None:
+        cv = 3
+
+    if isinstance(cv, numbers.Integral):
+        if (classifier and (y is not None) and
+                (type_of_target(y) in ('binary', 'multiclass'))):
+            return StratifiedKFold(cv, random_state=random_state)
+        else:
+            return KFold(cv, random_state=random_state)
+
+    if not hasattr(cv, 'split') or isinstance(cv, str):
+        if not isinstance(cv, Iterable) or isinstance(cv, str):
+            raise ValueError("Expected cv as an integer, cross-validation "
+                             "object (from sklearn.model_selection) "
+                             "or an iterable. Got %s." % cv)
+        return _CVIterableWrapper(cv)
+
+    return cv  # New style cv objects are passed without any modification
 
 class NestedCV():
     """ Class to perform validation and keep all the models
@@ -53,8 +115,7 @@ class NestedCV():
                 estimator.set_params(random_state=self.random_state)
             return estimator
 
-        #TODO - redo this CV logic so that self.random_state is involved
-        cv = check_cv(self.cv, y, classifier=is_classifier(self.estimator))
+        cv = check_cv2(self.cv, y, classifier=is_classifier(self.estimator), random_state=self.random_state)
         self.cv_iter_ = list(cv.split(X, y, groups))
         scorer = check_scoring(self.estimator, scoring=self.scoring)
         # We clone the estimator to make sure that all the folds are
