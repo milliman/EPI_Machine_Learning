@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan 29 00:09:12 2017
-
-@author: jgomberg
 """
 
 

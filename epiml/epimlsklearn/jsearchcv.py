@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 16 01:53:51 2017
-
-@author: jeffrey.gomberg
 """
 
 import copy
@@ -198,10 +196,10 @@ def _score_no_number_check(estimator, X_test, y_test, scorer):
             pass
     return score
 
-class JeffRandomSearchCV(BaseSearchCV):
+class JRandomSearchCV(BaseSearchCV):
     """Randomized search on hyper parameters, but can return a FrankenScorer in the results.
 
-    JeffRandomSearchCV implements a "fit" and a "score" method.
+    JRandomSearchCV implements a "fit" and a "score" method.
     It also implements "predict", "predict_proba", "decision_function",
     "transform" and "inverse_transform" if they are implemented in the
     estimator used.
@@ -413,7 +411,7 @@ class JeffRandomSearchCV(BaseSearchCV):
         self.param_distributions = param_distributions
         self.n_iter = n_iter
         self.random_state = random_state
-        super(JeffRandomSearchCV, self).__init__(
+        super(JRandomSearchCV, self).__init__(
              estimator=estimator, scoring=scoring, fit_params=fit_params,
              n_jobs=n_jobs, iid=iid, refit=refit, cv=cv, verbose=verbose,
              pre_dispatch=pre_dispatch, error_score=error_score,
@@ -564,7 +562,7 @@ class JeffRandomSearchCV(BaseSearchCV):
                 self.best_estimator_ = best_estimator
             return self
 
-def extract_score_grid(searcher: JeffRandomSearchCV):
+def extract_score_grid(searcher: JRandomSearchCV):
     """
     Take a fitted scorer that used a FrankenScorer() and extract the scoring data into a scoring grid
 

@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Feb 18 23:11:24 2017
-
-@author: jgomberg
 """
 
 import warnings

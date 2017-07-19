@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Jan  4 23:40:29 2017
-
-@author: jeffrey.gomberg
 """
 
 import numpy as np
@@ -10,7 +8,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin, MetaEstimatorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 
-from creon.semisuperhelper import SemiSupervisedHelper
+from epiml.semisuperhelper import SemiSupervisedHelper
 
 
 class PNUWrapper(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):

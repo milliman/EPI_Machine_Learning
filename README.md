@@ -1,4 +1,4 @@
-# Creon
+# EPI Machine Learning
 
 This project is referenced in the memo:
 _**reference memo here**_
@@ -25,31 +25,31 @@ Please see [input data format](#Input-data-format) for a description of the data
 
 ### Main entry-point to use best models
 
-Clone the repository and start using `creon.creonmain.py` with data generated into a tab separated value file.
+Clone the repository and start using `epiml.epimlnmain.py` with data generated into a tab separated value file.
 CSV files would also suffice as long as a comma (_,_) is passed into the `sep` parameter of `generate_trained_model`.
 
-Please see `Creonmain Example.ipynb` for an example of how to start using the library.
+Please see `Epimlmain Example.ipynb` for an example of how to start using the library.
 
 ### Python File Descriptions
 File | Description
 ---|---
-`creonmain.py` | Main entrypoint to train, save, load, and use models
-`loadcreon.py` | Used to load data and normalize / clean it for training
+`epimlmain.py` | Main entrypoint to train, save, load, and use models
+`loadepiml.py` | Used to load data and normalize / clean it for training
 `modeldeepdive.py` | Code to generate graphs and analysis / descriptions of models generated in the project
 `brestmodels.py` | Hard coded model(s) with parameters found to be good during various searches for hyper-parameters
 `semisuperhelper.py` | Helper code to handle unlabeled data (labeled as `-1`)
-`creonsklearn.creonmetrics.py` | Custom scoring metrics for models using unlabled data
-`creonsklearn.frankenscorer.py` | An Sklearn scorer object that can score multiple metrics at once
-`creonsklearn.jeffsearch.py` | A random search of hyper-parameters using a Frankenscorer
-`creonsklearn.nestedcross.py` | A class that runs a nested cross validation search
-`creonsklearn.pnuwrapper.py` | Wraps classifiers to be used with unlabeled data PNU = *P*ositive *N*egative *U*nlabled and has mechanism for random undersampling of unlabeled data
-`creonsklearn.repeatedsampling.py` | Wraps classifiers to be used with massively unbalanced data using repeated oversampling
-`creonsklearn.rfsubsample.py` | A modified Random Forest algorithm where every bootstrapped sample used adheres to a _target imbalance ratio_, uses oversampling
+`epimlsklearn.epimlmetrics.py` | Custom scoring metrics for models using unlabled data
+`epimlsklearn.frankenscorer.py` | An Sklearn scorer object that can score multiple metrics at once
+`epimlsklearn.jsearch.py` | A random search of hyper-parameters using a Frankenscorer
+`epimlsklearn.nestedcross.py` | A class that runs a nested cross validation search
+`epimlsklearn.pnuwrapper.py` | Wraps classifiers to be used with unlabeled data PNU = *P*ositive *N*egative *U*nlabled and has mechanism for random undersampling of unlabeled data
+`epimlsklearn.repeatedsampling.py` | Wraps classifiers to be used with massively unbalanced data using repeated oversampling
+`epimlsklearn.rfsubsample.py` | A modified Random Forest algorithm where every bootstrapped sample used adheres to a _target imbalance ratio_, uses oversampling
 
 ### Notebook File Descriptions
 File | Description
 --- | ---
-`Creonmain Example` | Example code on how to use creonmain.py
+`Epimlmain Example` | Example code on how to use epimlmain.py
 `ModelDeepDive with Model6` | Example code on how to use ModelDeepDive with _Model 6_ from the memo
 `LASSO - PN and PNU` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data (pnuwrapper.py) which is undersampled
 `SVC - PN and PNU` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled using pnuwrapper.py
@@ -69,17 +69,9 @@ SAS Flag Name | Long Name | Description
 `MemberID`| ID of patient | anonymous patient
 `age` | Age of patient | How old patient is
 `Gender` | Gender of patient
-`epi_related_cond` | EPI related condition of the patient
-`epi_related_cond_subgrp` | EPI related sub-group condition of the patient
-`pert_flag` | Flag if patient is taking a PERT
-`mmos` | Count of member months
-`h_rank` | Rank in the hierarchy
-`elastase_flag` | Flag if patient took fecal elastase test
 `true_pos_flag` | Flag if patient has been labeled as a true positive | Patients who have taken at least 3+ scripts of a PERT are labeled as true positive
 `true_neg_flag` |  Flag if patient has been labeled as true negative | Patients who have taken the fecal elastase test and not taken a PERT are labeled as true negative
 `unlabel_flag` | Flag if patient has not been labeled
-`medical_claim_count` | Count of medical claims
-`rx_claim_count` | Count of pharmacy claims
 `DIAG_FLAG1_SUM` | OTHER PANCREATIC NEOPLASMS | COUNT OF CLAIMS WITH CONDITION ICD-9 DIAGNOSIS GROUP OTHER PANCREATIC NEOPLASMS
 `DIAG_FLAG2_SUM` | CYSTIC FIBROSIS | COUNT OF CLAIMS WITH CONDITION ICD-9 DIAGNOSIS GROUP CYSTIC FIBROSIS
 `DIAG_FLAG3_SUM` | PANCREATIC CANCER | COUNT OF CLAIMS WITH CONDITION ICD-9 DIAGNOSIS GROUP PANCREATIC CANCER

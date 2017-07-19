@@ -2,8 +2,6 @@
 """
 Created on Mon Jan  2 00:03:11 2017
 
-@author: jeffrey.gomberg
-
 """
 import numpy as np
 from sklearn.utils import check_random_state

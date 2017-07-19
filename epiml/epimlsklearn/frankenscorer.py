@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan 15 00:03:22 2017
-
-@author: jeffrey.gomberg
 """
 from collections import defaultdict
 
 import pandas as pd
-from .creonmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled, brier_score_partial_loss
+from .epimlmetrics import labeled_metric, assumed_metric, pu_score, pr_one_unlabeled, brier_score_partial_loss
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score, brier_score_loss, fbeta_score, confusion_matrix
 

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Jan 14 23:41:21 2017
-
-@author: jeffrey.gomberg
 """
 
 import numpy as np
@@ -15,7 +13,7 @@ from sklearn.base import is_classifier, clone
 from sklearn.metrics.scorer import check_scoring
 from sklearn.externals.joblib import Parallel, delayed
 
-from .jeffsearchcv import _fit_and_score_with_extra_data, extract_score_grid
+from .jsearchcv import _fit_and_score_with_extra_data, extract_score_grid
 
 class NestedCV():
     """ Class to perform validation and keep all the models

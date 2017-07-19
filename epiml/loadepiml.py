@@ -1,5 +1,5 @@
 """
-This will load data for the Creon project and normalize it.
+This will load data for the Epiml project and normalize it.
 Also some helper functions for loading and saving searches
 """
 
@@ -17,7 +17,7 @@ def save_search(search, filename):
 def load_search(filename):
     return joblib.load(filename)
 
-class LoadCreonTransformer:
+class LoadEpimlTransformer:
     """Transforms a dataset by cleaning data, normalizing features, and dropping unused and unnecessary columns
 
     This class can be used as a scikit-learn transformer in a pipeline so that the data cleaning step is used
@@ -51,7 +51,7 @@ class LoadCreonTransformer:
 
     def transform(self, X):
         if not self.is_fit:
-            raise NotFittedError("This LoadCreonTransformer is not fitted yet")
+            raise NotFittedError("This LoadEpimlTransformer is not fitted yet")
         X = X.copy()
         X_cols = set(X.columns.values)
         data_cols = set(self._orig_col_headers)
@@ -68,8 +68,8 @@ class LoadCreonTransformer:
         return X
 
 
-class LoadCreon:
-    """Manage loading a Creon summarized dataset
+class LoadEpiml:
+    """Manage loading a Epiml summarized dataset
     self.data = original data loaded in
     self.X = cleaned, processed data with a Gender Column
     self.y = target varible created with data passed in
@@ -98,7 +98,7 @@ class LoadCreon:
         # -1 = unlabeled, 0 = true_negative, 1 = true_positive
         y = (self.data.unlabel_flag * -1) + self.data.true_pos_flag
         self.y = y
-        self.transformer = LoadCreonTransformer()
+        self.transformer = LoadEpimlTransformer()
         if call_fit:
             self.fit(self.data, self.y)
 
@@ -106,7 +106,7 @@ class LoadCreon:
         """
         Transform the data to clear out unwanted columns and columns that provide no information.
 
-        cleans data and prepares it for use in creon models
+        cleans data and prepares it for use in epiml models
         For example, if a feature is all 0, then do not use it
         Will create feature for Gender, drop unused or unwanted features
         Will remember which columns are used for future data coming in for preprocessing
@@ -133,4 +133,4 @@ class LoadCreon:
         return self.transformer.transform(X)
 
 if __name__ == "__main__":
-    lc = LoadCreon("C:\Data\\010317\membership14_final_0103.txt");
+    lc = LoadEpiml("C:\Data\\010317\membership14_final_0103.txt");

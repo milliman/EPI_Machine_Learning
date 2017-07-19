@@ -4,8 +4,6 @@
 Created on Tue May 30 07:39:06 2017
 
 This module contains all (err some) of the best models from the project
-
-@author: jgomberg
 """
 
 from sklearn.ensemble import RandomForestClassifier
@@ -13,8 +11,8 @@ from sklearn.preprocessing import MaxAbsScaler
 from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
 
-from creon.creonsklearn.repeatedsampling import RepeatedRandomSubSampler
-from creon.creonsklearn.pnuwrapper import PNUWrapper
+from epiml.epimlsklearn.repeatedsampling import RepeatedRandomSubSampler
+from epiml.epimlsklearn.pnuwrapper import PNUWrapper
 
 
 def generate_model_6(rf_random_state=324, subsampler_random_state=83, verbose=0):

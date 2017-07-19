@@ -3,8 +3,6 @@
 This class helps to explain models using LIME and generate some graphs of the results of a model.
 
 Created on Wed Apr 19 17:52:18 2017
-
-@author: jeffrey.gomberg
 """
 import pickle
 from collections import defaultdict
@@ -17,9 +15,9 @@ from lime.lime_tabular import LimeTabularExplainer
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import calibration_curve
 
-from creon.loadcreon import LoadCreon
-from creon.creonsklearn.frankenscorer import FrankenScorer
-from creon.bestmodels import generate_model_6
+from epiml.loadepiml import LoadEpiml
+from epiml.epimlsklearn.frankenscorer import FrankenScorer
+from epiml.bestmodels import generate_model_6
 
 
 class ModelDeepDive():
@@ -286,7 +284,7 @@ if __name__ == "__main__":
     path = "C:\Data\\010317\membership14_final_0103.txt"
     print("Loading {}".format(path))
     try:
-        lc = LoadCreon(path)
+        lc = LoadEpiml(path)
     except FileNotFoundError:
         #This is for running on a machine not on network that can see the data
         print("File doesn't exist, generating fake data!")

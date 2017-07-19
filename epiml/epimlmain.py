@@ -5,8 +5,6 @@ Created on Tue May 30 07:30:39 2017
 
 This class will represent utilities to save / load models
 as well as an entry-point to run further models with new input data.
-
-@author: jgomberg
 """
 import pandas as pd
 
@@ -14,8 +12,8 @@ from sklearn.externals import joblib
 from sklearn.pipeline import Pipeline
 from sklearn.exceptions import NotFittedError, ChangedBehaviorWarning
 
-from creon.loadcreon import LoadCreon
-from creon.bestmodels import generate_model_6
+from epiml.loadepiml import LoadEpiml
+from epiml.bestmodels import generate_model_6
 
 def save_clf(clf, filename):
     """
@@ -26,19 +24,19 @@ def save_clf(clf, filename):
 def load_clf(filename):
     return joblib.load(filename)
 
-class CreonModel:
+class EpimlModel:
 
     def __init__(self):
         self.clf = None
         return
 
     def generate_trained_model(self, path: str, sep='\t', generate_clf_fn=generate_model_6, **kwargs):
-        """Generate a trained model for CreonModel from a file with data as specified in LoadCreon
+        """Generate a trained model for EpimlnModel from a file with data as specified in LoadEpiml
 
         Parameters:
         --------------------
         path: str, required
-            filepath of data to open in LoadCreon
+            filepath of data to open in LoadEpiml
         sep: char, optional, default='\t'
             seperator character for the file path passed in
         generate_clf_fn: function that generates a classifier, optional, default=bestmodels.generate_model_6
@@ -47,9 +45,9 @@ class CreonModel:
 
         Returns:
         ------------------
-        Pipeline classifier that ties LoadCreon to the GeneratedModel, after setting self.clf to it
+        Pipeline classifier that ties LoadEpiml to the GeneratedModel, after setting self.clf to it
         """
-        lc = LoadCreon(path, sep=sep, call_fit=False)
+        lc = LoadEpiml(path, sep=sep, call_fit=False)
         clf = generate_clf_fn(**kwargs)
         pipe = Pipeline([('lc',lc.transformer),('model',clf)])
         pipe.fit(lc.data, lc.y)
@@ -69,7 +67,7 @@ class CreonModel:
         Pipeline loaded in from disk after setting self.clf
         """
         if self.clf is not None:
-            raise ChangedBehaviorWarning("CreonModel being loaded is overwriting another model")
+            raise ChangedBehaviorWarning("EpimlModel being loaded is overwriting another model")
         self.clf = load_clf(model_path)
         return self.clf
 
@@ -87,7 +85,7 @@ class CreonModel:
         Parameters:
         -----------------------------
         path: str, optional, default=None
-            If set, X must be None. Will open this file using LoadCreon and send it through self.clf
+            If set, X must be None. Will open this file using LoadEpiml and send it through self.clf
             It must be the same as what the model was trained with
             "unlabel_flag", "true_pos_flag", and "true_neg_flag" must be set (it's fine if 100% rows are unlabeled)
         X: pd.DataFrame, optional, default=None
@@ -100,14 +98,14 @@ class CreonModel:
         np.Array representing probability of having EPI
         """
         if path is None and X is None:
-            raise ValueError("CreonModel.predict must be passed a file path or a Pandas DataFrame")
+            raise ValueError("EpimlModel.predict must be passed a file path or a Pandas DataFrame")
         if path is not None and X is not None:
-            raise ValueError("CreonModel.predict must have only one of a file path or Pandas DataFrame")
+            raise ValueError("EpimlModel.predict must have only one of a file path or Pandas DataFrame")
         if self.clf is None:
-            raise NotFittedError("CreonModel not generated or loaded. Please call generate_trained_model or load_model")
+            raise NotFittedError("EpimlModel not generated or loaded. Please call generate_trained_model or load_model")
         if path is not None:
             #note that the file needs the columns "unlabel_flag", "true_pos_flag" and "true_neg_flag" defined
-            lc = LoadCreon(path, sep=sep, call_fit=False)
+            lc = LoadEpiml(path, sep=sep, call_fit=False)
             X = lc.data.copy()
         else:
             X = X.copy()
