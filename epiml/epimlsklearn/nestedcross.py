@@ -109,7 +109,7 @@ class NestedCV():
             """Clone the estimator and put in the correct random state for the nested cross validation
             """
             estimator = clone(self.estimator)
-            if self.use_same_random_state:
+            if self.use_same_random_state and ('random_state' in estimator.get_params().keys()):
                 estimator.set_params(random_state=self.random_state)
             return estimator
 

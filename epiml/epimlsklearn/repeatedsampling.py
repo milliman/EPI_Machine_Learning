@@ -73,7 +73,7 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
 
         voting : str, {'hard', 'soft', 'thresh'} (default = 'hard')
             If 'hard', uses predicted class labels for majroity rule voting.
-            If 'soft', predicts the class label based on the argmax of the of the predicted probabilities,
+            If 'soft', predicts the class label based on the argmax of the predicted probabilities,
                 which is recommended for well calibrated classifiers
             If 'thresh', use binary_thresh to predict if class 1, if not >= binary_thresh then class 0.  'thresh' is
                 invalid if not a binary classifier
@@ -105,6 +105,9 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
             raise ValueError("base_estimator must be defined before running fit")
 
         base_estimator = clone(self.base_estimator)
+        # Set the random state of the base estimator if possible to the sampler's random state
+        if ('random_state' in base_estimator.get_params().keys()):
+            base_estimator.set_params(random_state=random_state)
 
         # Store the classes seen during fit
         self.n_features_ = X.shape[1]
@@ -196,9 +199,9 @@ class RepeatedRandomSubSampler(BaseEstimator, ClassifierMixin, MetaEstimatorMixi
 if __name__ == "__main__":
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.datasets import make_classification
-    X, y = make_classification(n_samples=100, weights=[0.8, 0.2], random_state=100)
+    X, y = make_classification(n_samples=60000, weights=[0.9, 0.1], random_state=100)
     sub = RepeatedRandomSubSampler(RandomForestClassifier(n_estimators=50), voting='thresh',
-                                   binary_thresh = 0.7, n_jobs=1, verbose=1)
+                                   binary_thresh = 0.5, n_jobs=-1, verbose=1, random_state=47)
     sub.fit(X, y)
 
 
