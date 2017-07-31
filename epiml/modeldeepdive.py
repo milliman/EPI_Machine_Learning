@@ -50,7 +50,7 @@ class ModelDeepDive():
         y_df['probas_tens'] = (probas * 10).astype(int)
         self.y_df = y_df
 
-    #TODO - make the following run in parallel - hard bc LIME library has non-pickle-able classes so can't use joblib
+    #DREAM - make the following run in parallel - hard bc LIME library has non-pickle-able classes so can't use joblib
     def generate_explanations(self, n_examples=None, num_features=30, num_samples=10000, random_state=None,
                               use_decile_samples=False):
         """ Generate explanations for n_examples
@@ -260,20 +260,24 @@ class ModelDeepDive():
         percentile_df['unlabeled_pct'] = percentile_df['y=-1'] / percentile_df.probas
         percentile_df['true_pos_pct'] = percentile_df['y=1'] / labeled_tot
         percentile_df['true_neg_pct'] = percentile_df['y=0'] / labeled_tot
-        percentile_df.columns = ['Unlabeled','Negative','Positive','# Patients','% unlabeled','% Positive of Labeled',
-                                 '% Negative of Labeled']
-        percentile_df.index.name = 'Percentile Bucket'
+        percentile_df = percentile_df.rename(columns={'y=1':'Positive', 'y=0':'Negative', 'y=-1':'Unlabeled',
+                                                      'probas':'# Patients', 'unlabeled_pct':'% Unlabeled',
+                                                      'true_pos_pct':'% Positive of Labeled',
+                                                      'true_neg_pct':'% Negative of Labeled'})
+        percentile_df = percentile_df[['Unlabeled','Positive','Negative','# Patients','% Unlabeled',
+                                       '% Positive of Labeled','% Negative of Labeled']]
+        percentile_df.index.name = 'Predicted Percentile Bucket'
         return percentile_df
 
 
 ## BEST MODELS
-def create_model_6(X_train, y_train):
+def create_model_6(X_train: pd.DataFrame, y_train: pd.DataFrame):
     pnu_test = generate_model_6()
     pnu_test.fit(X_train.values, y_train.values)
     return pnu_test
 
-#TODO - fill in feature_names list of LimeTabularExplainer for more conherant explanations
-def create_explainer(X_train, y_train):
+#DREAM - fill in feature_names list of LimeTabularExplainer for more conherant explanations
+def create_explainer(X_train: pd.DataFrame, y_train: pd.DataFrame):
     return LimeTabularExplainer(X_train.values, feature_names=X_train.columns.values,
                                                   training_labels=y_train.values,
                                                   feature_selection='lasso_path', class_names=['No EPI', 'EPI'],

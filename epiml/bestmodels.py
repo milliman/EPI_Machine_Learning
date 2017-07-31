@@ -23,7 +23,6 @@ def generate_model_6(subsampler_random_state=83, verbose=0):
     PU score + (f1 beta=10 * 100)
     See '3.5 - RF - PNU Repeated Random Subsampling Random Search.ipynb'
     """
-
     rf = RandomForestClassifier(bootstrap=False, class_weight=None,
                   criterion='gini',
                   max_depth=47, max_features=49, max_leaf_nodes=None,
