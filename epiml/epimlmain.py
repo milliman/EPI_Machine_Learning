@@ -6,11 +6,14 @@ Created on Tue May 30 07:30:39 2017
 This class will represent utilities to save / load models
 as well as an entry-point to run further models with new input data.
 """
+
+from collections import namedtuple
 import pandas as pd
 
+from sklearn.exceptions import NotFittedError, ChangedBehaviorWarning
+from sklearn.model_selection import train_test_split
 from sklearn.externals import joblib
 from sklearn.pipeline import Pipeline
-from sklearn.exceptions import NotFittedError, ChangedBehaviorWarning
 
 from epiml.loadepiml import LoadEpiml
 from epiml.bestmodels import generate_model_6
@@ -25,6 +28,8 @@ def load_clf(filename):
     return joblib.load(filename)
 
 class EpimlModel:
+
+    ClassifierAndData = namedtuple('ClassifierAndData', 'clf X_train X_test y_train y_test')
 
     def __init__(self):
         self.clf = None
@@ -53,6 +58,39 @@ class EpimlModel:
         pipe.fit(lc.data, lc.y)
         self.clf = pipe
         return self.clf
+
+    def generate_trained_model_with_split(self, path: str, sep='\t', generate_clf_fn=generate_model_6,
+                                          test_size=0.2, random_state=771, **kwargs):
+        """Generate a trained model on a portion of the data passed in
+
+        Parameters:
+        --------------------------
+        path: str, required
+            filepath of data to open in LoadEpiml
+        sep: char, optional, default='\t'
+            seperator character for the file path passed in
+        generate_clf_fn: function that generates a classifier, optional, default=bestmodels.generate_model_6
+            Use this to generate a model to be trained and passed data from files like found in "path"
+        test_size: float, optional, default=0.0
+            real number between 0 and 1 that represents the percentage of the data to use for testing
+            If 0, then use ALL training data to train the model
+        random_state: int, optional, default=771
+            Used as a random seed to split up training and testing data if desired
+        kwargs: keyword args passed to generate_model_6
+
+        Returns:
+        --------------------------------------
+        ClassifierAndData named tuple with all the data to train the classfier and the classifier itself
+        """
+        lc = LoadEpiml(path, sep=sep, call_fit=False)
+        clf = generate_clf_fn(**kwargs)
+        pipe = Pipeline([('lc',lc.transformer),('model',clf)])
+        X_train, X_test, y_train, y_test = train_test_split(lc.data, lc.y, test_size=test_size,
+                                                            random_state=random_state, stratify=lc.y)
+        pipe.fit(X_train, y_train)
+        self.clf = pipe
+        res = self.ClassifierAndData(clf=pipe, X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test)
+        return res
 
     def load_model(self, model_path: str):
         """ Load a model from disk and set self.clf to it

@@ -1,4 +1,4 @@
-name: creon
+name: epiml
 channels:
 - defaults
 - glemaitre
