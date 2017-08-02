@@ -53,8 +53,9 @@ class LoadEpimlTransformer:
         if not self.is_fit:
             raise NotFittedError("This LoadEpimlTransformer is not fitted yet")
         X = X.copy()
-        X_cols = set(X.columns.values)
-        data_cols = set(self._orig_col_headers)
+        # add in self._unused_cols to the headers so that the error checks don't look for those columns
+        X_cols = set(X.columns.values).union(self._unused_cols)
+        data_cols = set(self._orig_col_headers).union(self._unused_cols)
         if X_cols != data_cols:
             missing_cols = data_cols - X_cols
             extra_cols = X_cols - data_cols
