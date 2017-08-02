@@ -102,7 +102,7 @@ class EpimlModel:
 
         Returns:
         ----------------------------
-        Pipeline loaded in from disk after setting self.clf
+        model loaded
         """
         if self.clf is not None:
             raise ChangedBehaviorWarning("EpimlModel being loaded is overwriting another model")
@@ -125,7 +125,7 @@ class EpimlModel:
         path: str, optional, default=None
             If set, X must be None. Will open this file using LoadEpiml and send it through self.clf
             It must be the same as what the model was trained with
-            "unlabel_flag", "true_pos_flag", and "true_neg_flag" must be set (it's fine if 100% rows are unlabeled)
+            "unlabel_flag", "true_pos_flag", and "true_neg_flag" must be set
         X: pd.DataFrame, optional, default=None
             If set, path must be None
             It must have the same column names as the file used to train the model originally
