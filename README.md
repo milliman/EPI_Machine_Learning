@@ -366,8 +366,10 @@ SAS Flag Name | Long Name | Description
 NOTE: 
 The code categories NDC_CAT81 (Non-EPI related Multivitamins), NDC_CAT92 (Digestive Aids - Creon) and NDC_CAT93 (Digestive Aids - Non-Creon) were excluded from the list of predictive features of the model. NDC_CAT92 and NDC_CAT93 were excluded because they were the features used to identify a patient as a true positive and NDC_CAT81 was excluded because it included drugs that were commonly over-the-counter.
 
+### Disclaimer
+This repository is prepared for educational purpose only, with the intent for research purpose only. You may not use this repository for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability.
 
-### Repo owners / admins
+### Repository owners and administrators
 
  **Jeff Gomberg**  
  jgomberg@aibraintree.com  
