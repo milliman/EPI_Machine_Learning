@@ -1,7 +1,16 @@
-# EPI Machine Learning
+# Applying Machine Learning Techniques to Identify Undiagnosed Patients with Exocrine Pancreatic Insufficiency
 
-This project is referenced in the memo:
-_**reference memo here**_
+This material is part of the Appendix to _[manuscript]_. Please refer to that article for important information about this material and its application. 
+
+### Disclaimer
+This repository is prepared for educational or research purposes only. You may not use this repository for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability. 
+
+### License
+Copyright (c) 2018 Milliman
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 ### What is this repository for?
 
@@ -11,7 +20,6 @@ _**reference memo here**_
  nested cross validation, metrics for use with unlabeled data, and random search for hyper-parameters
  using multiple metrics at the same time.
 
-### **Version 0.1**
 
 ### Requirements
 
