@@ -1,14 +1,17 @@
 # Applying Machine Learning Techniques to Identify Undiagnosed Patients with Exocrine Pancreatic Insufficiency
 
-This material is part of the Appendix to _[manuscript]_. Please refer to that article for important information about this material and its application. 
+This material is part of the Appendix to **_[manuscript]_**. Please refer to that article for important information about this material and its application. 
 
 ### Disclaimer
 This repository is prepared for educational or research purposes only. You may not use this repository for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability. 
 
 ### License
 Copyright (c) 2018 Milliman
+
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
@@ -57,11 +60,11 @@ File | Description
 ### Notebook File Descriptions
 File | Description
 --- | ---
-`1 - Epimlmain Example` | Example code on how to use epimlmain.py
-`2 - ModelDeepDive with Model6` | Example code on how to use ModelDeepDive with _Model 6_ from the memo
+`1 - Epimlmain Example` | Example code using epimlmain.py
+`2 - ModelDeepDive with Best Model` | Code to deep dive the _Model 3_ from the manuscript
 `3.1 - LASSO - PN and PNU` | Code to generate the LASSO baseline model using only PN (Positive and Negative) data and then a search for a model using PNU (PN + Unlabeled) data (pnuwrapper.py) which is undersampled
 `3.2 - SVC - PN and PNU` | Code to generate a Support Vector Classifier (SVC) using only PN data and then a search for an SVC using PNU data which is understampled using pnuwrapper.py
-`3.3 - RF - PNU All Data` | Use a good performing RF model found in previous searches and test with undersampling turned off, then generate a validation curve for an undersampling parameter in pnuwrapper.py
+`3.3 - RF - PNU All Data` | This file uses a good performing RF model found in previous searches and test with undersampling turned off, then generate a validation curve for an undersampling parameter in pnuwrapper.py
 `3.4 - RF - PNU Random Search` | A nested cross validated 3x3 100 iteration search for a Random Forest (RF) classifier wrapped with PNU data which is undersampled using pnuwrapper.py.  2 different metrics are used to optimize results seperately.
 `3.5 - RF - PNU Repeated Random Subsampling Random Search` | A nested cross validated 3x3 60 iteration search for a RF using repeated random subsampling (oversampling) using all PNU data.  This notebook also contains a lot of exploration and graphs around the best model found.
 
@@ -374,14 +377,7 @@ SAS Flag Name | Long Name | Description
 NOTE: 
 The code categories NDC_CAT81 (Non-EPI related Multivitamins), NDC_CAT92 (Digestive Aids - Creon) and NDC_CAT93 (Digestive Aids - Non-Creon) were excluded from the list of predictive features of the model. NDC_CAT92 and NDC_CAT93 were excluded because they were the features used to identify a patient as a true positive and NDC_CAT81 was excluded because it included drugs that were commonly over-the-counter.
 
-### Disclaimer
-This repository is prepared for educational purpose only, with the intent for research purpose only. You may not use this repository for any illegal or unethical purpose; including activities which would give rise to criminal or civil liability.
-
 ### Repository owners and administrators
 
- **Jeff Gomberg**  
- jgomberg@aibraintree.com  
- **Monica Son**  
- Monica.Son@Milliman.com  
  **Motoharu Dei**  
  Motoharu.Dei@Milliman.com
