@@ -47,7 +47,7 @@ File | Description
 `epimlmain.py` | Main entrypoint to train, save, load, and use models
 `loadepiml.py` | Used to load data and normalize / clean it for training
 `modeldeepdive.py` | Code to generate graphs and analysis / descriptions of models generated in the project
-`brestmodels.py` | Hard coded model(s) with parameters found to be good during various searches for hyper-parameters
+`bestmodels.py` | Hard coded model(s) with parameters found to be good during various searches for hyper-parameters
 `semisuperhelper.py` | Helper code to handle unlabeled data (labeled as `-1`)
 `epimlsklearn.epimlmetrics.py` | Custom scoring metrics for models using unlabled data
 `epimlsklearn.frankenscorer.py` | An Sklearn scorer object that can score multiple metrics at once
